@@ -23,7 +23,7 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $user = \App\Models\User::where('email', $request->email)->first();
+        $user = \App\Models\User::with('role')->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);

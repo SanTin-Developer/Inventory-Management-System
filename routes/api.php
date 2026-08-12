@@ -33,7 +33,6 @@ Route::get('/email/confirm/{token}', [EmailChangeController::class, 'confirm']);
 // Public - needed on the login page before auth exists
 Route::get('/settings/{key}', [SettingController::class, 'show']);
 
-
 // Public but rate-limited — hit during login, before a token exists,
 // so it must stay OUTSIDE the auth:sanctum group.
 Route::middleware('throttle:5,1')->post('/2fa/verify', [TwoFactorController::class, 'verify']);

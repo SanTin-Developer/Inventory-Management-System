@@ -12,16 +12,17 @@ use App\Http\Requests\UpdateCategoryRequest;
 class CategoryController extends Controller
 {
     // GET /api/categories
-    public function index(Request $request)
-    {
-        $search = $request->search;
+   // GET /api/categories
+public function index(Request $request)
+{
+    $search = $request->search;
 
+    // Dropdowns/selects don't need pagination — just the full list
+    if ($request->boolean('all')) {
         $categories = Category::query()
-            ->when($search, function ($query) use ($search) {
-                $query->where('category_name', 'LIKE', "%{$search}%");
-            })
-            ->orderBy('category_id', 'DESC')
-            ->paginate(10);
+            ->select('category_id', 'category_name')
+            ->orderBy('category_name')
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -29,6 +30,20 @@ class CategoryController extends Controller
             'data' => $categories
         ], 200);
     }
+
+    $categories = Category::query()
+        ->when($search, function ($query) use ($search) {
+            $query->where('category_name', 'LIKE', "%{$search}%");
+        })
+        ->orderBy('category_id', 'DESC')
+        ->paginate(10);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Categories retrieved successfully.',
+        'data' => $categories
+    ], 200);
+}
 
     // GET /api/categories/{id}
     public function show($id)
