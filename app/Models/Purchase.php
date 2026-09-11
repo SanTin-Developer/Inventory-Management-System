@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Purchase extends Model
 {
-    use HasFactory, Auditable;
+    use Auditable, HasFactory;
 
     protected $table = 'purchases';
 
@@ -24,7 +24,7 @@ class Purchase extends Model
         'total_amount',
         'status',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     // Purchase belongs to supplier

@@ -16,7 +16,7 @@ class CanManageSalaryRanges
     {
         $roleName = $request->user()?->role?->role_name;
 
-        if (!in_array($roleName, $this->allowedRoles, true)) {
+        if (! in_array($roleName, $this->allowedRoles, true)) {
             return response()->json([
                 'message' => 'You are not authorized to manage salary ranges.',
             ], 403);

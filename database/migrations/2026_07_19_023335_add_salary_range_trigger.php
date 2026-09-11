@@ -7,6 +7,12 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // PostgreSQL-only trigger (PL/pgSQL). Skipped on other drivers so
+        // SQLite-based tests and dev environments can still migrate.
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::unprepared('
         CREATE OR REPLACE FUNCTION trg_users_salary_range_check_fn()
         RETURNS TRIGGER AS $$

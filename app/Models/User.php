@@ -6,12 +6,12 @@ use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Crypt;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, HasApiTokens, Auditable, Notifiable;
+    use Auditable, HasApiTokens, HasFactory, Notifiable;
 
     protected $table = 'users';
 
@@ -38,15 +38,12 @@ class User extends Authenticatable
         'updated_at',
     ];
 
-
-
-
     // Never expose password in JSON responses
     protected $hidden = [
         'password',
         'remember_token',
         'two_factor_secret',        // never expose the raw secret
-        'two_factor_recovery_codes' // never expose recovery codes by default
+        'two_factor_recovery_codes', // never expose recovery codes by default
     ];
 
     /**
@@ -73,6 +70,7 @@ class User extends Authenticatable
             ? null
             : Crypt::encryptString(json_encode($value));
     }
+
     public function getTwoFactorRecoveryCodesAttribute($value)
     {
         return $value === null ? null : json_decode(Crypt::decryptString($value), true);
@@ -86,8 +84,8 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'password'  => 'hashed',
-            'salary'    => 'decimal:2',
+            'password' => 'hashed',
+            'salary' => 'decimal:2',
             'hire_date' => 'date',
             'two_factor_enabled' => 'boolean',
         ];

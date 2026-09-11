@@ -19,20 +19,20 @@ class StoreCustomerRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('customers', 'customer_code')
+                Rule::unique('customers', 'customer_code'),
             ],
             'customer_name' => 'required|string|max:150',
             'phone' => [
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('customers', 'phone')
+                Rule::unique('customers', 'phone'),
             ],
             'email' => [
                 'nullable',
                 'email',
                 'max:150',
-                Rule::unique('customers', 'email')
+                Rule::unique('customers', 'email'),
             ],
             'address' => 'nullable|string|max:255',
         ];

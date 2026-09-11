@@ -33,26 +33,24 @@ class UpdateCategoryRequest extends FormRequest
                 'max:100',
 
                 Rule::unique('categories', 'category_name')
-                    ->ignore($categoryId, 'category_id')
+                    ->ignore($categoryId, 'category_id'),
             ],
 
             'description' => [
 
                 'nullable',
                 'string',
-                'max:255'
-            ]
+                'max:255',
+            ],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'category_name.required'
-            => 'Category name is required.',
+            'category_name.required' => 'Category name is required.',
 
-            'category_name.unique'
-            => 'This category already exits.'
+            'category_name.unique' => 'This category already exits.',
         ];
     }
 }

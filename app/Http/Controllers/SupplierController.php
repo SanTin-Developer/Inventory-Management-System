@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Supplier;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Requests\StoreSupplierRequest;
 use App\Http\Requests\UpdateSupplierRequest;
+use App\Models\Supplier;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SupplierController extends Controller
 {
@@ -18,10 +18,11 @@ class SupplierController extends Controller
 
         $suppliers = Supplier::query()
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('supplier_name', 'like', "%{$keyword}%")
-                        ->orWhere('email', 'like', "%{$keyword}%")
-                        ->orWhere('phone', 'like', "%{$keyword}%");
+                $needle = '%'.$this->escapeLike($keyword).'%';
+                $query->where(function ($q) use ($needle) {
+                    $q->where('supplier_name', 'like', $needle)
+                        ->orWhere('email', 'like', $needle)
+                        ->orWhere('phone', 'like', $needle);
                 });
             })
             ->orderBy('supplier_id', 'desc')
@@ -41,10 +42,10 @@ class SupplierController extends Controller
             $needsGeneratedCode = empty($validated['supplier_code']);
 
             if ($needsGeneratedCode) {
-                $validated['supplier_code'] = 'TMP-' . uniqid();
+                $validated['supplier_code'] = 'TMP-'.uniqid();
             }
 
-            $supplier = Supplier::create($request->validated());
+            $supplier = Supplier::create($validated);
 
             if ($needsGeneratedCode) {
                 $supplier->supplier_code = $this->generateUniqueSupplierCode();
@@ -56,7 +57,7 @@ class SupplierController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Supplier created successfully.',
-                'data' => $supplier
+                'data' => $supplier,
             ], 201);
         } catch (Exception $e) {
 
@@ -64,7 +65,7 @@ class SupplierController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -72,7 +73,7 @@ class SupplierController extends Controller
     private function generateUniqueSupplierCode(): string
     {
         do {
-            $code = 'SP-' . random_int(10000, 99999);
+            $code = 'SP-'.random_int(10000, 99999);
         } while (Supplier::where('supplier_code', $code)->exists());
 
         return $code;
@@ -98,7 +99,7 @@ class SupplierController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Supplier updated successfully.',
-                'data' => $supplier
+                'data' => $supplier,
             ]);
         } catch (Exception $e) {
 
@@ -106,7 +107,7 @@ class SupplierController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -120,13 +121,13 @@ class SupplierController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Supplier deleted successfully.'
+                'message' => 'Supplier deleted successfully.',
             ]);
         } catch (Exception $e) {
 
             return response()->json([
                 'success' => false,
-                'message' => 'Supplier cannot be deleted because it has products.'
+                'message' => 'Supplier cannot be deleted because it has associated purchases.',
             ], 500);
         }
     }

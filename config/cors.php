@@ -17,20 +17,21 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => [
-    'http://localhost:5173',
-    'http://inventory-management.test',
-],
+        'http://localhost:5173',
+        'http://inventory-management.test',
+    ],
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => ['Content-Type', 'Accept', 'X-Requested-With', 'Authorization', 'X-XSRF-TOKEN'],
 
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    // Cache preflight responses for 10 minutes (reduces OPTIONS round-trips).
+    'max_age' => 600,
 
     'supports_credentials' => true,
 

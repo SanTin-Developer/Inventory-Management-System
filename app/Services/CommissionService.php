@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -22,9 +23,6 @@ class CommissionService
     /**
      * Calculate and store the commission for a single sale.
      * Safe to call more than once — won't duplicate an existing record.
-     *
-     * @param int $saleId
-     * @return array
      */
     public function calculateForSale(int $saleId): array
     {
@@ -93,16 +91,15 @@ class CommissionService
      * Total commissions earned by a seller within a date range
      * (e.g. for a monthly payout report).
      *
-     * @param int $userId
-     * @param string $startDate  'Y-m-d'
-     * @param string $endDate    'Y-m-d'
+     * @param  string  $startDate  'Y-m-d'
+     * @param  string  $endDate  'Y-m-d'
      */
     public function totalForSeller(int $userId, string $startDate, string $endDate): array
     {
         // Extend the end boundary to the last moment of that day —
         // otherwise a plain 'Y-m-d' end date is treated as midnight
         // and excludes every commission created later that same day.
-        $rangeEnd = \Illuminate\Support\Carbon::parse($endDate)->endOfDay();
+        $rangeEnd = Carbon::parse($endDate)->endOfDay();
 
         $rows = DB::table('commissions')
             ->where('user_id', $userId)
@@ -127,7 +124,7 @@ class CommissionService
         // Same end-of-day fix as totalForSeller() — a bare 'Y-m-d' end
         // date is midnight, which excludes commissions created later
         // that same day.
-        $rangeEnd = \Illuminate\Support\Carbon::parse($endDate)->endOfDay();
+        $rangeEnd = Carbon::parse($endDate)->endOfDay();
 
         $rows = DB::table('commissions')
             ->join('users', 'users.user_id', '=', 'commissions.user_id')
@@ -143,17 +140,16 @@ class CommissionService
             ->orderByDesc('total_commission')
             ->get();
 
-        // Oracle's OCI driver often returns COUNT()/SUM() results as
-        // strings rather than native PHP numbers. The frontend's number
-        // formatter only renders strict `typeof === 'number'` values
-        // (falling back to "—" otherwise), so cast explicitly here —
-        // this is what was causing "Sales count" to show "—" even
-        // though the underlying data was correct.
+        // Ensure numeric columns are cast to native PHP types so the
+        // frontend's number formatter renders them correctly (it only
+        // handles strict `typeof === 'number'`, otherwise falling back
+        // to "—" in the UI).
         return $rows->map(function ($row) {
             $row->user_id = (int) $row->user_id;
             $row->sales_count = (int) $row->sales_count;
             $row->total_sale_amount = round((float) $row->total_sale_amount, 2);
             $row->total_commission = round((float) $row->total_commission, 2);
+
             return $row;
         })->toArray();
     }

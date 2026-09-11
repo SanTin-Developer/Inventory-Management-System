@@ -6,11 +6,10 @@ use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-
 class Product extends Model
 {
     //
-    use HasFactory, Auditable;
+    use Auditable, HasFactory;
 
     protected $table = 'products';
 

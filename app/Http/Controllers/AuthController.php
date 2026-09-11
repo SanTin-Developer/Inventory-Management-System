@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Http\Requests\LoginRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Support\Str;
+use App\Support\Permissions;
 use Illuminate\Auth\Events\Login;
-use Illuminate\Support\Facades\Password as PasswordFacade;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
+    /**
+     * A bcrypt hash of a random password, used as a dummy comparison target
+     * when the email is unknown so login timing doesn't reveal valid emails.
+     */
+    private const DUMMY_HASH = '$2y$12$e0MYzXyjpJS7Pd0RVvHwHeFxGIwrq7oF4Cyj4e9e40qXm5J9jW0om';
+
     // Login and issue a token
     public function login(Request $request)
     {
@@ -23,9 +26,17 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $user = \App\Models\User::with('role')->where('email', $request->email)->first();
+        $user = User::with('role')->where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user) {
+            // Burn a comparable amount of CPU so responses are (near)uniform
+            // whether or not the email exists in the system.
+            Hash::check($request->password, self::DUMMY_HASH);
+
+            return response()->json(['message' => 'Invalid credentials.'], 401);
+        }
+
+        if (! Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials.'], 401);
         }
 
@@ -34,10 +45,10 @@ class AuthController extends Controller
         if ($user->status !== 'Active') {
             return response()->json([
                 'message' => match ($user->status) {
-                    'Inactive'   => 'Your account is inactive. Please contact an administrator.',
-                    'On Leave'   => 'Your account is currently on leave and cannot log in.',
+                    'Inactive' => 'Your account is inactive. Please contact an administrator.',
+                    'On Leave' => 'Your account is currently on leave and cannot log in.',
                     'Terminated' => 'This account has been terminated.',
-                    default      => 'Your account cannot log in at this time.',
+                    default => 'Your account cannot log in at this time.',
                 },
             ], 403);
         }
@@ -53,7 +64,7 @@ class AuthController extends Controller
         // --- normal login path (2FA not enabled) ---
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        event(new \Illuminate\Auth\Events\Login('web', $user, false));
+        event(new Login('web', $user, false));
 
         return response()->json([
             'token' => $token,
@@ -61,10 +72,29 @@ class AuthController extends Controller
         ]);
     }
 
-    // Return the currently authenticated user
+    // Return the currently authenticated user (with role + department)
     public function me(Request $request)
     {
         return response()->json($request->user());
+    }
+
+    // Authenticated user profile, including role and department relations
+    public function profile(Request $request)
+    {
+        return response()->json($request->user()->load('role', 'department'));
+    }
+
+    // Permission matrix for the current user's role (drives UI visibility)
+    public function permissions(Request $request)
+    {
+        $roleName = $request->user()?->role?->role_name;
+
+        return response()->json(
+            collect(array_keys(config('permissions')))
+                ->mapWithKeys(fn (string $resource) => [
+                    $resource => Permissions::level($resource, $roleName),
+                ])
+        );
     }
 
     // Revoke current token
@@ -74,7 +104,7 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Logged out successfully.'
+            'message' => 'Logged out successfully.',
         ]);
     }
 

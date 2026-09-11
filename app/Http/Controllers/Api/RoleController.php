@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
-use Illuminate\Http\Request;
 use App\Models\Role;
+use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
@@ -17,7 +17,7 @@ class RoleController extends Controller
         $roles = Role::query()
             ->withCount('users')
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where('role_name', 'like', "%{$keyword}%");
+                $query->where('role_name', 'like', '%'.$this->escapeLike($keyword).'%');
             })
             ->orderByDesc('role_id')
             ->paginate($request->input('per_page', 10));
@@ -31,7 +31,7 @@ class RoleController extends Controller
 
         $roles = Role::query()
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where('role_name', 'like', "%{$keyword}%");
+                $query->where('role_name', 'like', '%'.$this->escapeLike($keyword).'%');
             })
             ->orderByDesc('role_name')
             ->get();
@@ -44,7 +44,7 @@ class RoleController extends Controller
         $validated = $request->validated();
         unset($validated['role_code']); // never trust client-supplied code
 
-        $validated['role_code'] = 'TMP-' . uniqid();
+        $validated['role_code'] = 'TMP-'.uniqid();
         $role = Role::create($validated);
 
         $role->role_code = $this->generateUniqueRoleCode();
@@ -56,7 +56,7 @@ class RoleController extends Controller
     private function generateUniqueRoleCode(): string
     {
         do {
-            $code = 'R-' . random_int(10000, 99999);
+            $code = 'R-'.random_int(10000, 99999);
         } while (Role::where('role_code', $code)->exists());
 
         return $code;

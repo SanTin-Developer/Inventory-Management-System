@@ -10,8 +10,9 @@ class CloudinaryImageService
 
     public function __construct()
     {
-        // Reads CLOUDINARY_URL directly from .env — no Laravel wrapper package needed.
-        $this->cloudinary = new Cloudinary(env('CLOUDINARY_URL'));
+        // Reads CLOUDINARY_URL from config/services.php (env-backed) so the
+        // value keeps working after `php artisan config:cache`.
+        $this->cloudinary = new Cloudinary(config('services.cloudinary.url'));
     }
 
     /**
@@ -38,6 +39,7 @@ class CloudinaryImageService
             $this->cloudinary->uploadApi()->destroy($publicId);
         }
     }
+
     /**
      * Pull the folder/filename (without extension) out of a Cloudinary URL
      * so it can be passed to destroy(). E.g.
@@ -46,10 +48,10 @@ class CloudinaryImageService
      */
     protected function extractPublicId(string $url, string $folder): ?string
     {
-        $pattern = '#/' . preg_quote($folder, '#') . '/([^/.]+)\.\w+$#';
+        $pattern = '#/'.preg_quote($folder, '#').'/([^/.]+)\.\w+$#';
 
         if (preg_match($pattern, $url, $matches)) {
-            return $folder . '/' . $matches[1];
+            return $folder.'/'.$matches[1];
         }
 
         return null;

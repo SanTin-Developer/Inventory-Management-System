@@ -39,16 +39,16 @@ class StockHistoryController extends Controller
         $productId = $request->product_id;
 
         $counts = DB::table('stock_history')
-            ->when($productId, fn($q) => $q->where('product_id', $productId))
-            ->selectRaw("
+            ->when($productId, fn ($q) => $q->where('product_id', $productId))
+            ->selectRaw('
             COUNT(*) as total,
             SUM(CASE WHEN quantity >= 0 THEN 1 ELSE 0 END) as increases,
             SUM(CASE WHEN quantity < 0 THEN 1 ELSE 0 END) as decreases
-        ")
+        ')
             ->first();
 
         return response()->json([
-            'total'     => (int) $counts->total,
+            'total' => (int) $counts->total,
             'increases' => (int) $counts->increases,
             'decreases' => (int) $counts->decreases,
         ]);

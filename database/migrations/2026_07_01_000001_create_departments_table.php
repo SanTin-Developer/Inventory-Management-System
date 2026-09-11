@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('department_code')->unique()->nullable();
         });
     }
+
     /**
      * Reverse the migrations.
      */

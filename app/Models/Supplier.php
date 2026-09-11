@@ -24,12 +24,6 @@ class Supplier extends Model
         'email',
         'address',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
-
-    // Supplier has many products
-    public function products()
-    {
-        return $this->hasMany(Product::class, 'supplier_id', 'supplier_id');
-    }
 }

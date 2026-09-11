@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use PragmaRX\Google2FA\Google2FA;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Auth\Events\Login;
 
 class TwoFactorController extends Controller
 {
@@ -15,7 +15,7 @@ class TwoFactorController extends Controller
 
     public function __construct()
     {
-        $this->google2fa = new Google2FA();
+        $this->google2fa = new Google2FA;
     }
 
     /**
@@ -64,27 +64,26 @@ class TwoFactorController extends Controller
 
         $user = $request->user();
 
-        if (!$user->two_factor_secret) {
+        if (! $user->two_factor_secret) {
             return response()->json(['message' => 'No 2FA setup in progress.'], 400);
         }
 
         $valid = $this->google2fa->verifyKey($user->two_factor_secret, $request->code);
 
-        if (!$valid) {
+        if (! $valid) {
             return response()->json(['message' => 'Invalid code. Please try again.'], 422);
         }
 
         $recoveryCodes = collect(range(1, 8))
-            ->map(fn() => Str::upper(Str::random(4) . '-' . Str::random(4)))
+            ->map(fn () => Str::upper(Str::random(4).'-'.Str::random(4)))
             ->all();
 
-        // Save these as TWO separate calls — batching a boolean with a long
-        // encrypted text column in one save() trips an Oracle/OCI8 bind-count
-        // bug. Splitting sidesteps it entirely.
+        // Save in two separate calls to avoid potential type-mismatch
+        // issues when batching boolean with long encrypted text columns.
         $user->two_factor_recovery_codes = $recoveryCodes;
         $user->save();
 
-        $user->two_factor_enabled = 1; // integer, not PHP boolean — Oracle has no native boolean type
+        $user->two_factor_enabled = 1; // integer — matches the column's INT type
         $user->save();
 
         return response()->json([
@@ -101,7 +100,7 @@ class TwoFactorController extends Controller
     {
         $request->validate([
             'user_id' => ['required', 'integer'],
-            'code' => ['required', 'string']
+            'code' => ['required', 'string'],
         ]);
 
         $user = User::findOrFail($request->user_id);
@@ -110,7 +109,7 @@ class TwoFactorController extends Controller
             return response()->json(['message' => 'This account cannot log in at this time.'], 403);
         }
 
-        if (!$user->two_factor_enabled || !$user->two_factor_secret) {
+        if (! $user->two_factor_enabled || ! $user->two_factor_secret) {
             return response()->json(['message' => '2FA is not enabled for this account.'], 400);
         }
 
@@ -119,7 +118,7 @@ class TwoFactorController extends Controller
             && $this->google2fa->verifyKey($user->two_factor_secret, $request->code);
 
         $isValidRecovery = false;
-        if (!$isValidTotp) {
+        if (! $isValidTotp) {
             $recoveryCodes = $user->two_factor_recovery_codes ?? [];
             $normalizedInput = Str::upper(trim($request->code));
             if (in_array($normalizedInput, $recoveryCodes, true)) {
@@ -132,17 +131,16 @@ class TwoFactorController extends Controller
             }
         }
 
-        if (!$isValidTotp && !$isValidRecovery) {
+        if (! $isValidTotp && ! $isValidRecovery) {
             return response()->json([
-                'message' => 'Invalid code.'
+                'message' => 'Invalid code.',
             ], 422);
         }
 
         // Issue the real auth token now that 2FA has passed.
         $token = $user->createToken('auth_token')->plainTextToken;
 
-
-        event(new \Illuminate\Auth\Events\Login('web', $user, false));
+        event(new Login('web', $user, false));
 
         return response()->json([
             'token' => $token,
@@ -162,12 +160,12 @@ class TwoFactorController extends Controller
 
         $user = $request->user();
 
-        if (!Hash::check($request->password, $user->password)) {
+        if (! Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Incorrect password.'], 422);
         }
 
         // Same split-save pattern as confirm() — avoid batching mixed
-        // column types in one Oracle UPDATE.
+        // column types in one UPDATE statement.
         $user->two_factor_secret = null;
         $user->two_factor_recovery_codes = null;
         $user->save();

@@ -18,13 +18,13 @@ class StoreProductRequest extends FormRequest
             'category_id' => [
                 'required',
                 'integer',
-                Rule::exists('categories', 'category_id')
+                Rule::exists('categories', 'category_id'),
             ],
 
             'product_name' => [
                 'required',
                 'string',
-                'max:150'
+                'max:150',
             ],
 
             // Optional on create — if omitted, ProductController@store
@@ -34,40 +34,40 @@ class StoreProductRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('products', 'product_code')
+                Rule::unique('products', 'product_code'),
             ],
 
             'unit_price' => [
                 'required',
                 'numeric',
                 'min:0',
-                'max:99999999.99'
+                'max:99999999.99',
             ],
 
             'cost_price' => [
                 'required',
                 'numeric',
                 'min:0',
-                'max:99999999.99'
+                'max:99999999.99',
             ],
 
             'quantity_in_stock' => [
                 'nullable',
                 'integer',
-                'min:0'
+                'min:0',
             ],
 
             'reorder_level' => [
                 'nullable',
                 'integer',
-                'min:0'
+                'min:0',
             ],
 
             'unit' => [
                 'nullable',
                 'string',
-                'max:20'
-            ]
+                'max:20',
+            ],
         ];
     }
 }

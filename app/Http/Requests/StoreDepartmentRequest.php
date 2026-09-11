@@ -19,10 +19,10 @@ class StoreDepartmentRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('departments', 'department_code')
+                Rule::unique('departments', 'department_code'),
             ],
             'department_name' => 'required|string|max:100|unique:departments,department_name',
-            'description'     => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:255',
         ];
     }
 }

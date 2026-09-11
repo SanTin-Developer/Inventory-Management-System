@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
@@ -26,10 +25,11 @@ class UserController extends Controller
         $users = User::query()
             ->with(['role', 'department'])
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('name', 'like', "%{$keyword}%")
-                        ->orWhere('email', 'like', "%{$keyword}%")
-                        ->orWhere('phone', 'like', "%{$keyword}%");
+                $needle = '%'.$this->escapeLike($keyword).'%';
+                $query->where(function ($q) use ($needle) {
+                    $q->where('name', 'like', $needle)
+                        ->orWhere('email', 'like', $needle)
+                        ->orWhere('phone', 'like', $needle);
                 });
             })
             ->when($roleId, function ($query) use ($roleId) {
@@ -54,7 +54,8 @@ class UserController extends Controller
         unset($data['image']);     // raw upload key isn't a DB column, drop it
 
         $data['password'] = Hash::make($data['password']);
-        $data['user_code'] = 'TMP-' . uniqid(); // temp placeholder until we know user_id
+        $data['status'] = $data['status'] ?? 'Active';
+        $data['user_code'] = 'TMP-'.uniqid(); // temp placeholder until we know user_id
 
         $uploadedPath = null;
         if ($request->hasFile('image')) {
@@ -72,7 +73,7 @@ class UserController extends Controller
                 $this->images->delete($uploadedPath); // clean up orphaned file
             }
 
-            if (str_contains($e->getMessage(), 'ORA-20001')) {
+            if (str_contains($e->getMessage(), 'Salary must be between')) {
                 return response()->json([
                     'message' => 'Salary is outside the allowed range for this role.',
                     'errors' => ['salary' => ['Salary is outside the allowed range for this role.']],
@@ -88,7 +89,7 @@ class UserController extends Controller
     private function generateUniqueUserCode(): string
     {
         do {
-            $code = 'UR-' . random_int(10000, 99999);
+            $code = 'UR-'.random_int(10000, 99999);
         } while (User::where('user_code', $code)->exists());
 
         return $code;
@@ -105,14 +106,22 @@ class UserController extends Controller
             'current_password' => ['required'],
         ]);
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        // Password verification is a re-auth step for the CURRENT account only —
+        // it must never be used to brute-force another user's password.
+        if ($request->user()->user_id !== $user->user_id) {
             return response()->json([
-                'message' => 'Current password is incorrect.'
+                'message' => 'You can only verify your own password.',
+            ], 403);
+        }
+
+        if (! Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Current password is incorrect.',
             ], 422);
         }
 
         return response()->json([
-            'message' => 'Password verified.'
+            'message' => 'Password verified.',
         ]);
     }
 
@@ -134,11 +143,11 @@ class UserController extends Controller
             ->count();
 
         return response()->json([
-            'total'       => (int) $counts->total,
-            'active'      => (int) $counts->active,
-            'inactive'    => (int) $counts->inactive,
-            'on_leave'    => (int) $counts->on_leave,
-            'terminated'  => (int) $counts->terminated,
+            'total' => (int) $counts->total,
+            'active' => (int) $counts->active,
+            'inactive' => (int) $counts->inactive,
+            'on_leave' => (int) $counts->on_leave,
+            'terminated' => (int) $counts->terminated,
             'admin_count' => (int) $adminCount,
         ]);
     }
@@ -148,7 +157,7 @@ class UserController extends Controller
         $data = $request->validated();
         unset($data['image']); // raw upload key isn't a DB column, drop it
 
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             if ($request->user()->user_id !== $user->user_id) {
                 return response()->json([
                     'message' => 'You can only change your own password.',
@@ -160,15 +169,18 @@ class UserController extends Controller
             unset($data['password']);
         }
 
+        $oldImageUrl = null;
         if ($request->hasFile('image')) {
-            $this->images->delete($user->image_url);
+            // Upload the new image BEFORE deleting the old one, so a failed
+            // upload never leaves the user pointing at a deleted image.
             $data['image_url'] = $this->images->upload($request->file('image'));
+            $oldImageUrl = $user->image_url;
         }
 
         try {
             $user->update($data);
         } catch (QueryException $e) {
-            if (str_contains($e->getMessage(), 'ORA-20001')) {
+            if (str_contains($e->getMessage(), 'Salary must be between')) {
                 return response()->json([
                     'message' => 'Salary is outside the allowed range for this role.',
                     'errors' => ['salary' => ['Salary is outside the allowed range for this role.']],
@@ -177,13 +189,38 @@ class UserController extends Controller
             throw $e;
         }
 
+        if ($oldImageUrl !== null) {
+            try {
+                $this->images->delete($oldImageUrl);
+            } catch (\Throwable $e) {
+                \Log::warning('Failed to delete old user image: '.$e->getMessage());
+            }
+        }
+
         return response()->json($user->load(['department', 'role']));
     }
 
     public function destroy(User $user)
     {
-        $this->images->delete($user->image_url);
-        $user->delete();
+        try {
+            $user->delete();
+        } catch (QueryException $e) {
+            \Log::warning('User deletion failed: '.$e->getMessage());
+
+            return response()->json([
+                'message' => 'User cannot be deleted because they are referenced by sales, purchases, or other records.',
+            ], 409);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Something went wrong while deleting the user.',
+            ], 500);
+        }
+
+        try {
+            $this->images->delete($user->image_url);
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to delete user image during user deletion: '.$e->getMessage());
+        }
 
         return response()->json(['message' => 'User deleted.']);
     }

@@ -17,28 +17,28 @@ class AuditLogController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'user_id'        => 'nullable|integer',
-            'event'          => 'nullable|string',
+            'user_id' => 'nullable|integer',
+            'event' => 'nullable|string',
             'auditable_type' => 'nullable|string',
-            'from'           => 'nullable|date',
-            'to'             => 'nullable|date',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
         ]);
 
         $query = AuditLog::with('user')->latest('created_at');
 
-        if (!empty($validated['user_id'])) {
+        if (! empty($validated['user_id'])) {
             $query->where('user_id', $validated['user_id']);
         }
 
-        if (!empty($validated['event'])) {
+        if (! empty($validated['event'])) {
             $query->where('event', $validated['event']);
         }
 
-        if (!empty($validated['auditable_type'])) {
+        if (! empty($validated['auditable_type'])) {
             $query->where('auditable_type', $validated['auditable_type']);
         }
 
-        if (!empty($validated['from']) && !empty($validated['to'])) {
+        if (! empty($validated['from']) && ! empty($validated['to'])) {
             $query->whereBetween('created_at', [$validated['from'], $validated['to']]);
         }
 

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products', 'product_id');
             $table->integer('quantity');
             $table->decimal('unit_price', 12, 2);
-            $table->decimal('subtotal', 12, 2);
+            $table->decimal('subtotal', 12, 2)->default(0);
         });
     }
 

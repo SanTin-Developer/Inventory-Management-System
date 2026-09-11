@@ -23,8 +23,8 @@ class ConfirmNewEmail extends Mailable
 
     public function content(): Content
     {
-        $url = rtrim(config('app.frontend_url', env('FRONTEND_URL', '')), '/')
-            . '/email/confirm/' . $this->token;
+        $url = rtrim(config('app.frontend_url', 'http://localhost:5173'), '/')
+            .'/email/confirm/'.$this->token;
 
         return new Content(
             htmlString: "

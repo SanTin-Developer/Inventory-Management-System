@@ -26,34 +26,34 @@ class UpdateSupplierRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('suppliers', 'supplier_name')->ignore($supplierId, 'supplier_id')
+                Rule::unique('suppliers', 'supplier_name')->ignore($supplierId, 'supplier_id'),
             ],
 
             'contact_person' => [
                 'nullable',
                 'string',
-                'max:100'
+                'max:100',
             ],
 
             'phone' => [
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('suppliers', 'phone')->ignore($supplierId, 'supplier_id')
+                Rule::unique('suppliers', 'phone')->ignore($supplierId, 'supplier_id'),
             ],
 
             'email' => [
                 'nullable',
                 'email',
                 'max:100',
-                Rule::unique('suppliers', 'email')->ignore($supplierId, 'supplier_id')
+                Rule::unique('suppliers', 'email')->ignore($supplierId, 'supplier_id'),
             ],
 
             'address' => [
                 'nullable',
                 'string',
-                'max:255'
-            ]
+                'max:255',
+            ],
         ];
     }
 }

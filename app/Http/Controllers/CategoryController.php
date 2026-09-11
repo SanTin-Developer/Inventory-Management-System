@@ -2,64 +2,64 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Exception;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
+use App\Models\Category;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CategoryController extends Controller
 {
     // GET /api/categories
-   // GET /api/categories
-public function index(Request $request)
-{
-    $search = $request->search;
+    // GET /api/categories
+    public function index(Request $request)
+    {
+        $search = $request->search;
 
-    // Dropdowns/selects don't need pagination — just the full list
-    if ($request->boolean('all')) {
+        // Dropdowns/selects don't need pagination — just the full list
+        if ($request->boolean('all')) {
+            $categories = Category::query()
+                ->select('category_id', 'category_name')
+                ->orderBy('category_name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Categories retrieved successfully.',
+                'data' => $categories,
+            ], 200);
+        }
+
         $categories = Category::query()
-            ->select('category_id', 'category_name')
-            ->orderBy('category_name')
-            ->get();
+            ->when($search, function ($query) use ($search) {
+                $query->where('category_name', 'LIKE', '%'.$this->escapeLike($search).'%');
+            })
+            ->orderBy('category_id', 'DESC')
+            ->paginate(10);
 
         return response()->json([
             'success' => true,
             'message' => 'Categories retrieved successfully.',
-            'data' => $categories
+            'data' => $categories,
         ], 200);
     }
-
-    $categories = Category::query()
-        ->when($search, function ($query) use ($search) {
-            $query->where('category_name', 'LIKE', "%{$search}%");
-        })
-        ->orderBy('category_id', 'DESC')
-        ->paginate(10);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Categories retrieved successfully.',
-        'data' => $categories
-    ], 200);
-}
 
     // GET /api/categories/{id}
     public function show($id)
     {
         $category = Category::find($id);
 
-        if (!$category) {
+        if (! $category) {
             return response()->json([
                 'success' => false,
-                'message' => 'Category not found.'
+                'message' => 'Category not found.',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'data' => $category
+            'data' => $category,
         ], 200);
     }
 
@@ -79,7 +79,7 @@ public function index(Request $request)
             // then immediately overwrite it with "C-{category_id}" once
             // we know the new ID.
             if ($needsGeneratedCode) {
-                $validated['category_code'] = 'TMP-' . uniqid();
+                $validated['category_code'] = 'TMP-'.uniqid();
             }
 
             $category = Category::create($validated);
@@ -94,7 +94,7 @@ public function index(Request $request)
             return response()->json([
                 'success' => true,
                 'message' => 'Category created successfully.',
-                'data' => $category
+                'data' => $category,
             ], 201);
         } catch (Exception $e) {
 
@@ -102,7 +102,7 @@ public function index(Request $request)
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -110,7 +110,7 @@ public function index(Request $request)
     private function generateUniqueCategoryCode(): string
     {
         do {
-            $code = 'CT-' . random_int(10000, 99999);
+            $code = 'CT-'.random_int(10000, 99999);
         } while (Category::where('category_code', $code)->exists());
 
         return $code;
@@ -138,6 +138,7 @@ public function index(Request $request)
             ], 500);
         }
     }
+
     // DELETE /api/categories/{id}
     public function destroy($id)
     {
@@ -145,10 +146,10 @@ public function index(Request $request)
 
             $category = Category::find($id);
 
-            if (!$category) {
+            if (! $category) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Category not found.'
+                    'message' => 'Category not found.',
                 ], 404);
             }
 
@@ -156,13 +157,13 @@ public function index(Request $request)
 
             return response()->json([
                 'success' => true,
-                'message' => 'Category deleted successfully.'
+                'message' => 'Category deleted successfully.',
             ], 200);
         } catch (Exception $e) {
 
             return response()->json([
                 'success' => false,
-                'message' => 'Cannot delete category. It may have related products.'
+                'message' => 'Cannot delete category. It may have related products.',
             ], 500);
         }
     }

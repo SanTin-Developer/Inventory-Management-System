@@ -21,6 +21,7 @@ class SaleDetail extends Model
         'product_id',
         'quantity',
         'unit_price',
+        'subtotal',
     ];
 
     // Detail belongs to sale

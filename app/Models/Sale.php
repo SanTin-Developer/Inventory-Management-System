@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class Sale extends Model
 {
     //
-    use HasFactory, Auditable;
+    use Auditable, HasFactory;
 
     protected $table = 'sales';
 
@@ -28,7 +28,7 @@ class Sale extends Model
         'payment_method',
         'status',
         'created_at',
-        'updated_at'
+        'updated_at',
     ];
 
     // Sale belongs to user (who recorded it)

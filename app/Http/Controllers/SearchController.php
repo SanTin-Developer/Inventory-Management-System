@@ -21,15 +21,15 @@ use Illuminate\Support\Facades\DB;
  *     directly), since its columns line up with vw_purchase_summary the
  *     same way SALES lines up with vw_sales_summary. Not yet confirmed —
  *     run DESCRIBE PURCHASES if this section 500s.
- *   - Oracle string comparison is case-sensitive by default, so this uses
- *     UPPER() on both sides rather than relying on LIKE alone.
+ *   - UPPER() is used on both sides for case-insensitive matching, which
+ *     works consistently across PostgreSQL and other databases.
  *   - Each section is capped at $limit (default 5) so the dropdown stays
  *     short; the frontend can add a "view all results" link per section
  *     if you want a dedicated full search-results page later.
  *
  * If any table/column name doesn't match your real schema, this will throw
- * an Oracle "invalid identifier" error — that's the signal to fix the name,
- * not a bug in the query logic.
+ * a PostgreSQL "invalid column reference" error — that's the signal to fix
+ * the name, not a bug in the query logic.
  */
 class SearchController extends Controller
 {
@@ -41,7 +41,7 @@ class SearchController extends Controller
 
         $term = trim($request->query('q'));
         $limit = (int) $request->query('limit', 5);
-        $needle = '%' . strtoupper($term) . '%';
+        $needle = '%'.strtoupper($this->escapeLike($term)).'%';
 
         $products = DB::table('products')
             ->select('product_id', 'product_name', 'product_code', 'quantity_in_stock', 'reorder_level')

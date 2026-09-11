@@ -7,6 +7,13 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // This migration creates PostgreSQL views/functions/procedures/triggers
+        // that were converted from the original Oracle schema. It is PostgreSQL-
+        // only; other drivers (e.g. SQLite used by tests) must not execute it.
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::unprepared("
             -- ================= VIEWS =================
             CREATE OR REPLACE VIEW vw_product_inventory AS
@@ -239,10 +246,14 @@ return new class extends Migration
                 END IF;
 
                 UPDATE sales
-                SET total_amount = (
-                    SELECT COALESCE(SUM(quantity * unit_price), 0)
-                    FROM sale_details WHERE sale_id = v_sale_id
-                ) - COALESCE(discount_amount, 0)
+                SET total_amount = CASE
+                    WHEN EXISTS (SELECT 1 FROM sale_details WHERE sale_id = v_sale_id)
+                    THEN (
+                        SELECT COALESCE(SUM(quantity * unit_price), 0)
+                        FROM sale_details WHERE sale_id = v_sale_id
+                    ) - COALESCE(discount_amount, 0)
+                    ELSE 0
+                END
                 WHERE sale_id = v_sale_id;
 
                 RETURN NULL;

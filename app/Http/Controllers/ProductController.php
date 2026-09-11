@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Models\Product;
 use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -20,9 +20,10 @@ class ProductController extends Controller
         $products = Product::query()
             ->with('category')
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('product_name', 'like', "%{$keyword}%")
-                        ->orWhere('product_code', 'like', "%{$keyword}%");
+                $needle = '%'.$this->escapeLike($keyword).'%';
+                $query->where(function ($q) use ($needle) {
+                    $q->where('product_name', 'like', $needle)
+                        ->orWhere('product_code', 'like', $needle);
                 });
             })
             ->when($categoryId, function ($query) use ($categoryId) {
@@ -42,9 +43,10 @@ class ProductController extends Controller
         $products = Product::query()
             ->with('category')
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('product_name', 'like', "%{$keyword}%")
-                        ->orWhere('product_code', 'like', "%{$keyword}%");
+                $needle = '%'.$this->escapeLike($keyword).'%';
+                $query->where(function ($q) use ($needle) {
+                    $q->where('product_name', 'like', $needle)
+                        ->orWhere('product_code', 'like', $needle);
                 });
             })
             ->when($categoryId, function ($query) use ($categoryId) {
@@ -72,7 +74,7 @@ class ProductController extends Controller
             // to satisfy the constraint, then immediately overwrite it with
             // the real generated code once we know the new ID.
             if ($needsGeneratedCode) {
-                $validated['product_code'] = 'TMP-' . uniqid();
+                $validated['product_code'] = 'TMP-'.uniqid();
             }
 
             $product = Product::create($validated);
@@ -87,7 +89,7 @@ class ProductController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Product created successfully.',
-                'data' => $product
+                'data' => $product,
             ], 201);
         } catch (Exception $e) {
 
@@ -95,7 +97,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -107,7 +109,7 @@ class ProductController extends Controller
     private function generateUniqueProductCode(): string
     {
         do {
-            $code = 'PD-' . random_int(10000, 99999);
+            $code = 'PD-'.random_int(10000, 99999);
         } while (Product::where('product_code', $code)->exists());
 
         return $code;
@@ -118,13 +120,13 @@ class ProductController extends Controller
     public function stats()
     {
         $counts = DB::table('vw_product_inventory')
-            ->selectRaw("
+            ->selectRaw('
             COUNT(*) as total,
             SUM(CASE WHEN quantity_in_stock <= 0 THEN 1 ELSE 0 END) as out_of_stock,
             SUM(CASE WHEN quantity_in_stock > 0 AND quantity_in_stock <= reorder_level THEN 1 ELSE 0 END) as low_stock,
             SUM(CASE WHEN quantity_in_stock > reorder_level THEN 1 ELSE 0 END) as in_stock,
             SUM(quantity_in_stock * cost_price) as inventory_value
-        ")
+        ')
             ->first();
 
         $byCategory = DB::table('vw_product_inventory')
@@ -133,18 +135,18 @@ class ProductController extends Controller
             ->orderByDesc(DB::raw('COUNT(*)'))
             ->get();
 
-        $byCategory = $byCategory->map(fn($row) => [
-            'name'  => $row->name,
+        $byCategory = $byCategory->map(fn ($row) => [
+            'name' => $row->name,
             'value' => $row->category_count,
         ]);
 
         return response()->json([
-            'total'            => (int) $counts->total,
-            'in_stock'         => (int) $counts->in_stock,
-            'low_stock'        => (int) $counts->low_stock,
-            'out_of_stock'     => (int) $counts->out_of_stock,
-            'inventory_value'  => (float) $counts->inventory_value,
-            'by_category'      => $byCategory,
+            'total' => (int) $counts->total,
+            'in_stock' => (int) $counts->in_stock,
+            'low_stock' => (int) $counts->low_stock,
+            'out_of_stock' => (int) $counts->out_of_stock,
+            'inventory_value' => (float) $counts->inventory_value,
+            'by_category' => $byCategory,
         ]);
     }
 
@@ -168,7 +170,7 @@ class ProductController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Product updated successfully.',
-                'data' => $product
+                'data' => $product,
             ]);
         } catch (Exception $e) {
 
@@ -176,7 +178,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], 500);
         }
     }
@@ -186,14 +188,15 @@ class ProductController extends Controller
     {
         try {
             $product->delete();
+
             return response()->json([
                 'success' => true,
-                'message' => 'Product deleted successfully.'
+                'message' => 'Product deleted successfully.',
             ]);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Product cannot be deleted because it is referenced in purchases, sales, or stock history.'
+                'message' => 'Product cannot be deleted because it is referenced in purchases, sales, or stock history.',
             ], 500);
         }
     }

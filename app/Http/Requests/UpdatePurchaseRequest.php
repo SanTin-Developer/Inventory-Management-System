@@ -18,49 +18,49 @@ class UpdatePurchaseRequest extends FormRequest
             'supplier_id' => [
                 'required',
                 'integer',
-                Rule::exists('suppliers', 'supplier_id')
+                Rule::exists('suppliers', 'supplier_id'),
             ],
 
             'user_id' => [
                 'required',
                 'integer',
-                Rule::exists('users', 'user_id')
+                Rule::exists('users', 'user_id'),
             ],
 
             'purchase_date' => [
                 'nullable',
-                'date'
+                'date',
             ],
 
             'status' => [
                 'required',
                 'string',
-                Rule::in(['Pending', 'Received', 'Cancelled'])
+                Rule::in(['Pending', 'Received', 'Cancelled']),
             ],
 
             // Optional: if provided, replaces all existing line items
             'details' => [
                 'sometimes',
                 'array',
-                'min:1'
+                'min:1',
             ],
 
             'details.*.product_id' => [
                 'required_with:details',
                 'integer',
-                Rule::exists('products', 'product_id')
+                Rule::exists('products', 'product_id'),
             ],
 
             'details.*.quantity' => [
                 'required_with:details',
                 'integer',
-                'min:1'
+                'min:1',
             ],
 
             'details.*.unit_cost' => [
                 'required_with:details',
                 'numeric',
-                'min:0'
+                'min:0',
             ],
         ];
     }

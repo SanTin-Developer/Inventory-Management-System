@@ -21,6 +21,7 @@ class PurchaseDetail extends Model
         'product_id',
         'quantity',
         'unit_cost',
+        'subtotal',
     ];
 
     // Details belongs to purchase

@@ -10,6 +10,7 @@ class SettingController extends Controller
     public function show($key)
     {
         $setting = Setting::where('key', $key)->first();
+
         return response()->json($setting ? json_decode($setting->value, true) : null);
     }
 
@@ -21,9 +22,9 @@ class SettingController extends Controller
         }
 
         $validated = $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'telegram' => 'nullable|string|max:100',
-            'phone'    => 'nullable|string|max:30',
+            'phone' => 'nullable|string|max:30',
         ]);
 
         Setting::updateOrCreate(['key' => $key], ['value' => json_encode($validated)]);

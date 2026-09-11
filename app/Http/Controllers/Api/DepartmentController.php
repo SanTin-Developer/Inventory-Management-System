@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDepartmentRequest;
-use Illuminate\Http\Request;
 use App\Http\Requests\UpdateDepartmentRequest;
 use App\Models\Department;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DepartmentController extends Controller
@@ -19,9 +19,9 @@ class DepartmentController extends Controller
         $departments = Department::query()
             ->withCount('users')
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where('department_name', 'like', "%{$keyword}%");
+                $query->where('department_name', 'like', '%'.$this->escapeLike($keyword).'%');
             })
-            ->orderByRaw("TO_NUMBER(REGEXP_SUBSTR(department_code, '[0-9]+')) DESC")
+            ->orderByRaw("COALESCE(CAST(REGEXP_REPLACE(department_code, '[^0-9]', '', 'g') AS INTEGER), 0) DESC")
             ->paginate($request->input('per_page', 10));
 
         return response()->json($departments);
@@ -33,9 +33,9 @@ class DepartmentController extends Controller
 
         $departments = Department::query()
             ->when($keyword, function ($query) use ($keyword) {
-                $query->where('department_name', 'like', "%{$keyword}%");
+                $query->where('department_name', 'like', '%'.$this->escapeLike($keyword).'%');
             })
-            ->orderByRaw("TO_NUMBER(REGEXP_SUBSTR(department_code, '[0-9]+')) DESC")
+            ->orderByRaw("COALESCE(CAST(REGEXP_REPLACE(department_code, '[^0-9]', '', 'g') AS INTEGER), 0) DESC")
             ->get();
 
         return response()->json($departments);
@@ -49,7 +49,7 @@ class DepartmentController extends Controller
             $validated = $request->validated();
             unset($validated['department_code']);
 
-            $validated['department_code'] = 'TMP-' . uniqid();
+            $validated['department_code'] = 'TMP-'.uniqid();
             $department = Department::create($validated);
 
             $department->department_code = $this->generateUniqueDepartmentCode();
@@ -75,7 +75,7 @@ class DepartmentController extends Controller
     private function generateUniqueDepartmentCode(): string
     {
         do {
-            $code = 'DM-' . random_int(10000, 99999);
+            $code = 'DM-'.random_int(10000, 99999);
         } while (Department::where('department_code', $code)->exists());
 
         return $code;

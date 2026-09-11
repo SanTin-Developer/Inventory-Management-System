@@ -18,67 +18,67 @@ class StoreSaleRequest extends FormRequest
             'user_id' => [
                 'required',
                 'integer',
-                Rule::exists('users', 'user_id')
+                Rule::exists('users', 'user_id'),
             ],
 
             'customer_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('customers', 'customer_id')
+                Rule::exists('customers', 'customer_id'),
             ],
 
             'sale_code' => [
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('sales', 'sale_code')
+                Rule::unique('sales', 'sale_code'),
             ],
 
             'customer_name' => [
                 'nullable',
                 'string',
-                'max:100'
+                'max:100',
             ],
 
             'total_amount' => [
                 'required',
                 'numeric',
-                'min:0'
+                'min:0',
             ],
 
             'sale_date' => [
                 'nullable',
-                'date'
+                'date',
             ],
 
             'payment_method' => [
                 'nullable',
                 'string',
-                Rule::in(['Cash', 'Card', 'Bank Transfer', 'Mobile Payment'])
+                Rule::in(['Cash', 'Card', 'Bank Transfer', 'Mobile Payment']),
             ],
 
             'status' => [
                 'nullable',
                 'string',
-                Rule::in(['Completed', 'Refunded', 'Cancelled'])
+                Rule::in(['Completed', 'Refunded', 'Cancelled']),
             ],
 
             'details' => [
                 'required',
                 'array',
-                'min:1'
+                'min:1',
             ],
 
             'details.*.product_id' => [
                 'required',
                 'integer',
-                Rule::exists('products', 'product_id')
+                Rule::exists('products', 'product_id'),
             ],
 
             'details.*.quantity' => [
                 'required',
                 'integer',
-                'min:1'
+                'min:1',
             ],
 
             'discount_amount' => 'nullable|numeric|min:0',
@@ -86,7 +86,7 @@ class StoreSaleRequest extends FormRequest
             'details.*.unit_price' => [
                 'required',
                 'numeric',
-                'min:0'
+                'min:0',
             ],
         ];
     }

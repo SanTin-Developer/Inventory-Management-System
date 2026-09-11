@@ -28,7 +28,7 @@ class StoreCategoryRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                'unique:categories,category_name'
+                'unique:categories,category_name',
             ],
 
             // Optional on create — if omitted, CategoryController@store
@@ -37,13 +37,13 @@ class StoreCategoryRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('categories', 'category_code')
+                Rule::unique('categories', 'category_code'),
             ],
 
             'description' => [
                 'nullable',
                 'string',
-                'max:255'
+                'max:255',
             ],
         ];
     }
@@ -52,17 +52,13 @@ class StoreCategoryRequest extends FormRequest
     {
         return [
 
-            'category_name.required' =>
-            'Category name is required.',
+            'category_name.required' => 'Category name is required.',
 
-            'category_name.unique' =>
-            'This category already exists.',
+            'category_name.unique' => 'This category already exists.',
 
-            'category_name.max' =>
-            'Category name cannot exceed 100 characters.',
+            'category_name.max' => 'Category name cannot exceed 100 characters.',
 
-            'category_code.unique' =>
-            'This category code is already in use.',
+            'category_code.unique' => 'This category code is already in use.',
         ];
     }
 }

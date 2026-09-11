@@ -5,12 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Purchase;
-use App\Models\PurchaseDetail;
 use App\Models\Sale;
 use App\Models\SaleDetail;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -22,16 +21,16 @@ class ReportController extends Controller
     public function salesSummary(Request $request)
     {
         $validated = $request->validate([
-            'from'     => 'nullable|date',
-            'to'       => 'nullable|date',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
             'group_by' => 'nullable|in:day,month',
         ]);
 
-        $from    = $validated['from'] ?? now()->subDays(30)->toDateString();
-        $to      = \Illuminate\Support\Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
+        $from = $validated['from'] ?? now()->subDays(30)->toDateString();
+        $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
         $groupBy = $validated['group_by'] ?? 'day';
 
-        // Oracle date-format model (TO_CHAR), not MySQL's DATE_FORMAT
+        // TO_CHAR is standard SQL and works in PostgreSQL
         $dateFormat = $groupBy === 'month' ? 'YYYY-MM' : 'YYYY-MM-DD';
         $periodExpr = "TO_CHAR(sale_date, '{$dateFormat}')";
 
@@ -41,8 +40,8 @@ class ReportController extends Controller
             ->selectRaw('COUNT(*) as total_sales, COALESCE(SUM(total_amount), 0) as total_revenue')
             ->first();
 
-        // Oracle doesn't allow GROUP BY / ORDER BY on a SELECT alias,
-        // so the raw expression is repeated rather than referencing "period".
+        // Repeat the raw expression rather than referencing the alias "period"
+        // for maximum SQL compatibility.
         $breakdown = (clone $query)
             ->selectRaw("{$periodExpr} as period, COUNT(*) as total_sales, COALESCE(SUM(total_amount), 0) as total_revenue")
             ->groupByRaw($periodExpr)
@@ -55,12 +54,12 @@ class ReportController extends Controller
             ->get();
 
         return response()->json([
-            'from'              => $from,
-            'to'                => $to,
-            'group_by'          => $groupBy,
-            'total_sales'       => (int) $totals->total_sales,
-            'total_revenue'     => (float) $totals->total_revenue,
-            'breakdown'         => $breakdown,
+            'from' => $from,
+            'to' => $to,
+            'group_by' => $groupBy,
+            'total_sales' => (int) $totals->total_sales,
+            'total_revenue' => (float) $totals->total_revenue,
+            'breakdown' => $breakdown,
             'by_payment_method' => $byPaymentMethod,
         ]);
     }
@@ -74,11 +73,11 @@ class ReportController extends Controller
     {
         $validated = $request->validate([
             'from' => 'nullable|date',
-            'to'   => 'nullable|date',
+            'to' => 'nullable|date',
         ]);
 
         $from = $validated['from'] ?? now()->subDays(30)->toDateString();
-        $to   = $validated['to'] ?? now()->toDateString();
+        $to = $validated['to'] ?? now()->toDateString();
 
         $query = Purchase::whereBetween('purchase_date', [$from, $to]);
 
@@ -99,12 +98,12 @@ class ReportController extends Controller
             ->get();
 
         return response()->json([
-            'from'             => $from,
-            'to'               => $to,
-            'total_purchases'  => (int) $totals->total_purchases,
-            'total_spend'      => (float) $totals->total_spend,
-            'by_supplier'      => $bySupplier,
-            'by_status'        => $byStatus,
+            'from' => $from,
+            'to' => $to,
+            'total_purchases' => (int) $totals->total_purchases,
+            'total_spend' => (float) $totals->total_spend,
+            'by_supplier' => $bySupplier,
+            'by_status' => $byStatus,
         ]);
     }
 
@@ -121,13 +120,13 @@ class ReportController extends Controller
 
         $lowStockOnly = filter_var($validated['low_stock_only'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
-        // Oracle (unlike MySQL) doesn't allow SELECT *, expr — an explicit
-        // column list is required when mixing table columns with a computed one.
+        // Explicit column list required when mixing table columns with
+        // a computed expression.
         $query = Product::with('category')
             ->selectRaw(
                 'product_id, category_id, product_name, product_code, unit_price, '
-                    . 'cost_price, quantity_in_stock, reorder_level, unit, '
-                    . '(quantity_in_stock * cost_price) as stock_value'
+                    .'cost_price, quantity_in_stock, reorder_level, unit, '
+                    .'(quantity_in_stock * cost_price) as stock_value'
             );
 
         if ($lowStockOnly) {
@@ -142,11 +141,11 @@ class ReportController extends Controller
         $lowStockCount = Product::whereColumn('quantity_in_stock', '<=', 'reorder_level')->count();
 
         return response()->json([
-            'total_products'        => Product::count(),
-            'low_stock_count'       => $lowStockCount,
-            'total_cost_value'      => (float) $valuation->total_cost_value,
-            'total_retail_value'    => (float) $valuation->total_retail_value,
-            'products'              => $products,
+            'total_products' => Product::count(),
+            'low_stock_count' => $lowStockCount,
+            'total_cost_value' => (float) $valuation->total_cost_value,
+            'total_retail_value' => (float) $valuation->total_retail_value,
+            'products' => $products,
         ]);
     }
 
@@ -158,15 +157,15 @@ class ReportController extends Controller
     public function topProducts(Request $request)
     {
         $validated = $request->validate([
-            'from'     => 'nullable|date',
-            'to'       => 'nullable|date',
-            'limit'    => 'nullable|integer|min:1|max:100',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
+            'limit' => 'nullable|integer|min:1|max:100',
             'order_by' => 'nullable|in:quantity,revenue',
         ]);
 
-        $from    = $validated['from'] ?? now()->subDays(30)->toDateString();
-        $to      = \Illuminate\Support\Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
-        $limit   = $validated['limit'] ?? 10;
+        $from = $validated['from'] ?? now()->subDays(30)->toDateString();
+        $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
+        $limit = $validated['limit'] ?? 10;
         $orderBy = $validated['order_by'] ?? 'quantity';
 
         $orderColumn = $orderBy === 'revenue' ? 'total_revenue' : 'total_quantity_sold';
@@ -181,8 +180,8 @@ class ReportController extends Controller
             ->get();
 
         return response()->json([
-            'from'     => $from,
-            'to'       => $to,
+            'from' => $from,
+            'to' => $to,
             'order_by' => $orderBy,
             'products' => $products,
         ]);
@@ -197,13 +196,13 @@ class ReportController extends Controller
     public function slowMovingProducts(Request $request)
     {
         $validated = $request->validate([
-            'from'  => 'nullable|date',
-            'to'    => 'nullable|date',
+            'from' => 'nullable|date',
+            'to' => 'nullable|date',
             'limit' => 'nullable|integer|min:1|max:100',
         ]);
 
-        $from  = $validated['from'] ?? now()->subDays(30)->toDateString();
-        $to    = \Illuminate\Support\Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
+        $from = $validated['from'] ?? now()->subDays(30)->toDateString();
+        $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
         $limit = $validated['limit'] ?? 10;
 
         $products = DB::table('products')
@@ -231,8 +230,8 @@ class ReportController extends Controller
             ->values();
 
         return response()->json([
-            'from'     => $from,
-            'to'       => $to,
+            'from' => $from,
+            'to' => $to,
             'products' => $products,
         ]);
     }

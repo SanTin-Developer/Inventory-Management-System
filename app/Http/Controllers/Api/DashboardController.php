@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
@@ -17,26 +18,26 @@ class DashboardController extends Controller
         // trips into ~1 for every user for 2 minutes at a time.
         $data = Cache::remember('dashboard.index', 120, function () {
             return [
-                'counts'              => $this->safe(fn() => $this->coreCounts(), $this->emptyCounts()),
-                'sales_trend'         => $this->safe(fn() => $this->salesTrend(), []),
-                'category_breakdown'  => $this->safe(fn() => $this->categoryBreakdown(), []),
-                'low_stock_items'     => $this->safe(fn() => $this->lowStockItems(), []),
-                'recent_activity'     => $this->safe(fn() => $this->recentActivity(), []),
+                'counts' => $this->safe(fn () => $this->coreCounts(), $this->emptyCounts()),
+                'sales_trend' => $this->safe(fn () => $this->salesTrend(), []),
+                'category_breakdown' => $this->safe(fn () => $this->categoryBreakdown(), []),
+                'low_stock_items' => $this->safe(fn () => $this->lowStockItems(), []),
+                'recent_activity' => $this->safe(fn () => $this->recentActivity(), []),
             ];
         });
 
         return response()->json([
-            'total_products'   => $data['counts']['total_products'],
-            'total_suppliers'  => $data['counts']['total_suppliers'],
-            'total_purchases'  => $data['counts']['total_purchases'],
-            'total_sales'      => $data['counts']['total_sales'],
-            'low_stock'        => $data['counts']['low_stock'],
-            'inventory_value'  => $data['counts']['inventory_value'],
+            'total_products' => $data['counts']['total_products'],
+            'total_suppliers' => $data['counts']['total_suppliers'],
+            'total_purchases' => $data['counts']['total_purchases'],
+            'total_sales' => $data['counts']['total_sales'],
+            'low_stock' => $data['counts']['low_stock'],
+            'inventory_value' => $data['counts']['inventory_value'],
 
-            'sales_trend'         => $data['sales_trend'],
-            'category_breakdown'  => $data['category_breakdown'],
-            'low_stock_items'     => $data['low_stock_items'],
-            'recent_activity'     => $data['recent_activity'],
+            'sales_trend' => $data['sales_trend'],
+            'category_breakdown' => $data['category_breakdown'],
+            'low_stock_items' => $data['low_stock_items'],
+            'recent_activity' => $data['recent_activity'],
         ]);
     }
 
@@ -45,7 +46,8 @@ class DashboardController extends Controller
         try {
             return $fn();
         } catch (\Throwable $e) {
-            Log::warning('Dashboard metric failed: ' . $e->getMessage());
+            Log::warning('Dashboard metric failed: '.$e->getMessage());
+
             return $default;
         }
     }
@@ -53,11 +55,11 @@ class DashboardController extends Controller
     private function emptyCounts(): array
     {
         return [
-            'total_products'  => 0,
+            'total_products' => 0,
             'total_suppliers' => 0,
             'total_purchases' => 0,
-            'total_sales'     => 0,
-            'low_stock'       => 0,
+            'total_sales' => 0,
+            'low_stock' => 0,
             'inventory_value' => 0,
         ];
     }
@@ -68,7 +70,7 @@ class DashboardController extends Controller
      */
     private function coreCounts(): array
     {
-        $row = DB::selectOne("
+        $row = DB::selectOne('
             SELECT
                 (SELECT COUNT(*) FROM products)  AS total_products,
                 (SELECT COUNT(*) FROM suppliers) AS total_suppliers,
@@ -78,14 +80,14 @@ class DashboardController extends Controller
                     WHERE quantity_in_stock <= reorder_level) AS low_stock,
                 (SELECT COALESCE(SUM(quantity_in_stock * cost_price), 0)
                     FROM vw_product_inventory) AS inventory_value
-        ");
+        ');
 
         return [
-            'total_products'  => (int) $row->total_products,
+            'total_products' => (int) $row->total_products,
             'total_suppliers' => (int) $row->total_suppliers,
             'total_purchases' => (int) $row->total_purchases,
-            'total_sales'     => (int) $row->total_sales,
-            'low_stock'       => (int) $row->low_stock,
+            'total_sales' => (int) $row->total_sales,
+            'low_stock' => (int) $row->low_stock,
             'inventory_value' => (float) $row->inventory_value,
         ];
     }
@@ -96,8 +98,8 @@ class DashboardController extends Controller
     public function lowStockAlerts()
     {
         return response()->json([
-            'low_stock'       => $this->safe(fn() => $this->lowStockCountFresh(), 0),
-            'low_stock_items' => $this->safe(fn() => $this->lowStockItems(), []),
+            'low_stock' => $this->safe(fn () => $this->lowStockCountFresh(), 0),
+            'low_stock_items' => $this->safe(fn () => $this->lowStockItems(), []),
         ]);
     }
 
@@ -126,7 +128,7 @@ class DashboardController extends Controller
             ->where('sale_date', '>=', now()->subDays(30))
             ->groupBy(DB::raw("DATE_TRUNC('day', sale_date)"), DB::raw("TO_CHAR(sale_date, 'Mon DD')"))
             ->get()
-            ->keyBy(fn($row) => \Carbon\Carbon::parse($row->day_key)->toDateString());
+            ->keyBy(fn ($row) => Carbon::parse($row->day_key)->toDateString());
 
         $purchases = DB::table('vw_purchase_summary')
             ->select(
@@ -137,7 +139,7 @@ class DashboardController extends Controller
             ->where('purchase_date', '>=', now()->subDays(30))
             ->groupBy(DB::raw("DATE_TRUNC('day', purchase_date)"), DB::raw("TO_CHAR(purchase_date, 'Mon DD')"))
             ->get()
-            ->keyBy(fn($row) => \Carbon\Carbon::parse($row->day_key)->toDateString());
+            ->keyBy(fn ($row) => Carbon::parse($row->day_key)->toDateString());
 
         $allDateKeys = $sales->keys()
             ->merge($purchases->keys())
@@ -150,11 +152,11 @@ class DashboardController extends Controller
             $purchaseRow = $purchases[$dateKey] ?? null;
 
             $label = $saleRow->day_label ?? $purchaseRow->day_label
-                ?? \Carbon\Carbon::parse($dateKey)->format('M d');
+                ?? Carbon::parse($dateKey)->format('M d');
 
             return [
-                'date'      => $label,
-                'sales'     => (float) ($saleRow->amount ?? 0),
+                'date' => $label,
+                'sales' => (float) ($saleRow->amount ?? 0),
                 'purchases' => (float) ($purchaseRow->amount ?? 0),
             ];
         })->values()->all();
@@ -170,7 +172,7 @@ class DashboardController extends Controller
             ->groupBy('category_name')
             ->orderByDesc(DB::raw('SUM(quantity_in_stock)'))
             ->get()
-            ->map(fn($row) => ['name' => $row->name, 'value' => (int) $row->value])
+            ->map(fn ($row) => ['name' => $row->name, 'value' => (int) $row->value])
             ->all();
     }
 
@@ -190,11 +192,11 @@ class DashboardController extends Controller
             ->orderBy('quantity_in_stock')
             ->limit(10)
             ->get()
-            ->map(fn($row) => [
-                'name'              => $row->name,
-                'sku'               => $row->sku,
+            ->map(fn ($row) => [
+                'name' => $row->name,
+                'sku' => $row->sku,
                 'quantity_in_stock' => (int) $row->quantity_in_stock,
-                'reorder_level'     => (int) $row->reorder_level,
+                'reorder_level' => (int) $row->reorder_level,
             ])
             ->all();
     }
@@ -232,7 +234,7 @@ class DashboardController extends Controller
 
                 return [
                     'message' => $message,
-                    'time'    => \Carbon\Carbon::parse($row->created_at)->diffForHumans(),
+                    'time' => Carbon::parse($row->created_at)->diffForHumans(),
                 ];
             })
             ->all();

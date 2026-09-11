@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
-use Illuminate\Http\Request;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
@@ -17,7 +17,7 @@ class CustomerController extends Controller
         $query = Customer::query();
 
         if ($request->filled('search')) {
-            $term = '%' . strtoupper($request->search) . '%';
+            $term = '%'.strtoupper($this->escapeLike($request->search)).'%';
             $query->where(function ($q) use ($term) {
                 $q->whereRaw('UPPER(customer_name) LIKE ?', [$term])
                     ->orWhereRaw('UPPER(email) LIKE ?', [$term])
@@ -37,7 +37,7 @@ class CustomerController extends Controller
             unset($validated['customer_code']); // never trust client-supplied code
 
             // temp placeholder to satisfy NOT NULL / UNIQUE until we assign the real code
-            $validated['customer_code'] = 'TMP-' . uniqid();
+            $validated['customer_code'] = 'TMP-'.uniqid();
 
             $customer = Customer::create($validated);
 
@@ -65,12 +65,11 @@ class CustomerController extends Controller
     private function generateUniqueCustomerCode(): string
     {
         do {
-            $code = 'CM-' . random_int(10000, 99999);
+            $code = 'CM-'.random_int(10000, 99999);
         } while (Customer::where('customer_code', $code)->exists());
 
         return $code;
     }
-
 
     public function show(Customer $customer)
     {

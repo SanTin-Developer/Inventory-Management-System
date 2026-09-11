@@ -18,55 +18,55 @@ class StorePurchaseRequest extends FormRequest
             'supplier_id' => [
                 'required',
                 'integer',
-                Rule::exists('suppliers', 'supplier_id')
+                Rule::exists('suppliers', 'supplier_id'),
             ],
 
             'purchase_code' => [
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('purchases', 'purchase_code')
+                Rule::unique('purchases', 'purchase_code'),
             ],
 
             'user_id' => [
                 'required',
                 'integer',
-                Rule::exists('users', 'user_id')
+                Rule::exists('users', 'user_id'),
             ],
 
             'purchase_date' => [
                 'nullable',
-                'date'
+                'date',
             ],
 
             'status' => [
                 'nullable',
                 'string',
-                Rule::in(['Pending', 'Received', 'Cancelled'])
+                Rule::in(['Pending', 'Received', 'Cancelled']),
             ],
 
             'details' => [
                 'required',
                 'array',
-                'min:1'
+                'min:1',
             ],
 
             'details.*.product_id' => [
                 'required',
                 'integer',
-                Rule::exists('products', 'product_id')
+                Rule::exists('products', 'product_id'),
             ],
 
             'details.*.quantity' => [
                 'required',
                 'integer',
-                'min:1'
+                'min:1',
             ],
 
             'details.*.unit_cost' => [
                 'required',
                 'numeric',
-                'min:0'
+                'min:0',
             ],
         ];
     }

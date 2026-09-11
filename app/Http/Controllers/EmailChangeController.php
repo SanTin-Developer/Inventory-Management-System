@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ConfirmNewEmail;
-use App\Mail\EmailChangeRequestedNotice;
 use App\Mail\EmailChangedConfirmation;
+use App\Mail\EmailChangeRequestedNotice;
 use App\Models\PendingEmailChange;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -18,7 +18,7 @@ class EmailChangeController extends Controller
 
     public function __construct()
     {
-        $this->google2fa = new Google2FA();
+        $this->google2fa = new Google2FA;
     }
 
     public function requestChange(Request $request)
@@ -91,7 +91,7 @@ class EmailChangeController extends Controller
 
         $user->tokens()->delete();
 
-        Mail::to($oldEmail)->send(new EmailChangedConfirmation());
+        Mail::to($oldEmail)->send(new EmailChangedConfirmation);
 
         return response()->json([
             'status' => 'Email changed successfully.',

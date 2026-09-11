@@ -14,6 +14,15 @@ return [
     |
     */
 
+    'cloudinary' => [
+        'url' => env('CLOUDINARY_URL'),
+    ],
+
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+        'timeout' => env('BREVO_TIMEOUT', 30),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

@@ -22,7 +22,7 @@ class EnsureUserHasRole
         if (! $user || ! in_array($roleName, $roles, true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are not authorized to perform this action.'
+                'message' => 'You are not authorized to perform this action.',
             ], 403);
         }
 

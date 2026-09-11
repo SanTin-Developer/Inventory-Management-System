@@ -19,41 +19,41 @@ class StoreSupplierRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('suppliers', 'supplier_code')
+                Rule::unique('suppliers', 'supplier_code'),
             ],
 
             'supplier_name' => [
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('suppliers', 'supplier_name')
+                Rule::unique('suppliers', 'supplier_name'),
             ],
 
             'contact_person' => [
                 'nullable',
                 'string',
-                'max:100'
+                'max:100',
             ],
 
             'phone' => [
                 'nullable',
                 'string',
                 'max:20',
-                Rule::unique('suppliers', 'phone')
+                Rule::unique('suppliers', 'phone'),
             ],
 
             'email' => [
                 'nullable',
                 'email',
                 'max:100',
-                Rule::unique('suppliers', 'email')
+                Rule::unique('suppliers', 'email'),
             ],
 
             'address' => [
                 'nullable',
                 'string',
-                'max:255'
-            ]
+                'max:255',
+            ],
         ];
     }
 }

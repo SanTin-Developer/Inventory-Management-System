@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
  * variability, and supplier lead time. Uses Reorder Point (ROP) +
  * Economic Order Quantity (EOQ).
  *
- * Schema notes (Oracle):
+ * Schema notes (PostgreSQL):
  *   products(product_id PK, product_name, quantity_in_stock, reorder_level,
  *            lead_time_days, order_cost, holding_cost, ...)
  *   sales(sale_id PK, sale_date, status, ...)
@@ -26,9 +26,7 @@ class PurchaseRecommendationService
     /**
      * Analyze a single product and return a purchase recommendation.
      *
-     * @param int $productId
-     * @param int $lookbackDays  How many days of sales history to analyze
-     * @return array
+     * @param  int  $lookbackDays  How many days of sales history to analyze
      */
     public function analyzeProduct(int $productId, int $lookbackDays = 90): array
     {
@@ -50,10 +48,10 @@ class PurchaseRecommendationService
             ->join('sales', 'sales.sale_id', '=', 'sale_details.sale_id')
             ->where('sale_details.product_id', $productId)
             ->where('sales.sale_date', '>=', now()->subDays($lookbackDays))
-            ->selectRaw('TRUNC(sales.sale_date) as sale_day, SUM(sale_details.quantity) as qty')
-            ->groupBy(DB::raw('TRUNC(sales.sale_date)'))
+            ->selectRaw("DATE_TRUNC('day', sales.sale_date)::date as sale_day, SUM(sale_details.quantity) as qty")
+            ->groupBy(DB::raw("DATE_TRUNC('day', sales.sale_date)::date"))
             ->pluck('qty')
-            ->map(fn($q) => (float) $q)
+            ->map(fn ($q) => (float) $q)
             ->toArray();
 
         // If there's no sales history, we can't forecast — flag it
@@ -117,7 +115,7 @@ class PurchaseRecommendationService
     {
         return DB::table('products')
             ->pluck('product_id')
-            ->map(fn($id) => $this->analyzeProduct((int) $id, $lookbackDays))
+            ->map(fn ($id) => $this->analyzeProduct((int) $id, $lookbackDays))
             ->toArray();
     }
 
@@ -149,7 +147,7 @@ class PurchaseRecommendationService
             return 0.0;
         }
 
-        $variance = array_sum(array_map(fn($v) => ($v - $mean) ** 2, $values)) / $count;
+        $variance = array_sum(array_map(fn ($v) => ($v - $mean) ** 2, $values)) / $count;
 
         return sqrt($variance);
     }
