@@ -24,7 +24,7 @@ A modern, full-stack **Inventory Management System** built for a mid-size tradin
 
 | Email | Password |
 | --- | --- |
-| `santinoeurn0601@gmail.com` | `DemoInventory2026!` |
+| `adminsystem@company.com` | `Admin1234!` |
 
 ### Production Overview
 
