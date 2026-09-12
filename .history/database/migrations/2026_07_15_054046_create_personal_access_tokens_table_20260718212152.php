@@ -1,1 +1,0 @@
-php artisan make:migration create_password_reset_tokens_table
