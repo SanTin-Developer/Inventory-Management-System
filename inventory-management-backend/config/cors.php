@@ -21,6 +21,7 @@ return [
 
     'allowed_origins' => [
         env('FRONTEND_URL') ?? 'http://localhost:5173',
+        'https://inventory-management-system-iota-one-97.vercel.app',
         'http://localhost:5173',
         'http://inventory-management.test',
     ],
