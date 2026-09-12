@@ -72,7 +72,7 @@ class ProductionDemoSeeder extends Seeder
             ['EMP-003', 'Sreynich Lim', 'sreynich.lim@mekongoffice.demo', '012 555 103', 'WHS', 'OPS', 620, '2024-01-08', '1995-07-05', 'Tuol Kork, Phnom Penh', null],
             ['EMP-004', 'Rithy Keo', 'rithy.keo@mekongoffice.demo', '012 555 104', 'CSH', 'SAL', 480, '2024-04-22', '1998-11-18', 'Mean Chey, Phnom Penh', 1.50],
             ['EMP-005', 'Malis Phan', 'malis.phan@mekongoffice.demo', '012 555 105', 'ACC', 'FIN', 720, '2023-09-11', '1993-02-27', 'Daun Penh, Phnom Penh', null],
-            ['EMP-006', 'San Tin', 'santinoeurn0601@gmail.com', '071 555 105', 'ADM', 'FIN', 720, '2023-09-11', '1993-02-27', 'Daun Penh, Phnom Penh', null],
+            ['EMP-006', 'San Tin', 'santinoeurn0601@gmail.com', '071 555 105', 'ADM', 'FIN', 1500, '2023-09-11', '1993-02-27', 'Daun Penh, Phnom Penh', null],
         ];
         $result = [];
         foreach ($rows as $r) {
