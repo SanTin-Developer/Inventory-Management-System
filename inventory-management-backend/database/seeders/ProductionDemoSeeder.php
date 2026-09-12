@@ -76,10 +76,19 @@ class ProductionDemoSeeder extends Seeder
         ];
         $result = [];
         foreach ($rows as $r) {
-            $user = User::firstOrCreate(['user_code' => $r[0]], [
-                'user_code' => $r[0], 'name' => $r[1], 'email' => $r[2], 'password' => Hash::make('DemoInventory2026!'), 'phone' => $r[3], 'status' => 'Active',
-                'role_id' => $roles[$r[4]]->role_id, 'department_id' => $departments[$r[5]]->department_id, 'salary' => $r[6], 'hire_date' => $r[7], 'date_of_birth' => $r[8], 'address' => $r[9], 'commission_rate' => $r[10],
-            ]);
+            $attributes = [
+                'name' => $r[1], 'password' => Hash::make('DemoInventory2026!'), 'phone' => $r[3], 'status' => 'Active',
+                'role_id' => $roles[$r[4]]->role_id, 'department_id' => $departments[$r[5]]->department_id, 'salary' => $r[6], 'hire_date' => $r[7], 'date_of_birth' => $r[8], 'address' => $r[9],
+            ];
+            // An account may already exist under the demo email (e.g. one
+            // registered earlier through the running app). Match on user_code
+            // OR email so the unique email constraint can't abort the seed.
+            $user = User::where('user_code', $r[0])->orWhere('email', $r[2])->first();
+            if ($user) {
+                $user->forceFill($attributes + ['user_code' => $r[0], 'email' => $r[2]])->save();
+            } else {
+                $user = User::create($attributes + ['user_code' => $r[0], 'email' => $r[2]]);
+            }
             // commission_rate is intentionally guarded on User, so set this
             // limited payroll field explicitly for the demo cashier.
             if ($user->commission_rate != $r[10]) {
