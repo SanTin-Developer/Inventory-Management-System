@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Mail,
   Phone,
@@ -13,8 +13,10 @@ import {
   ShieldCheck,
   UserRound,
   Pencil,
+  LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import api from "../services/api";
 import { usersApi } from "../services/service";
 import TwoFactorSetup from "./TwoFactorSetup";
 
@@ -30,6 +32,9 @@ const STATUS_STYLE = {
   "On Leave": { color: "#F4972B", bg: "#FEF6EC" },
   Terminated: { color: "#6B7280", bg: "#F3F4F6" },
 };
+
+// Settings keys that hold the contact-administrator details shown on sign-in
+const CONTACT_KEYS = ["contact_email", "contact_phone", "contact_telegram"];
 
 const inputClass =
   "font-body w-full px-3.5 py-2.5 bg-[#F3F4F6] border border-transparent rounded-lg text-[14px] text-[#10151F] focus:outline-none focus:ring-2 focus:ring-[#2F5FEA] focus:bg-white transition";
@@ -90,6 +95,45 @@ export default function Profile() {
   const [passwordVerified, setPasswordVerified] = useState(false);
   const [verifyingPwd, setVerifyingPwd] = useState(false);
   const [verifyError, setVerifyError] = useState(null);
+
+  // Contact administrator (company) info — shown on the sign-in page
+  const [contactLoading, setContactLoading] = useState(true);
+  const [contactForm, setContactForm] = useState({
+    email: "",
+    phone: "",
+    telegram: "",
+  });
+  const [contactError, setContactError] = useState(null);
+  const [contactMessage, setContactMessage] = useState(null);
+  const [savingContact, setSavingContact] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    // One key returns the whole { email, phone, telegram } object.
+    api
+      .get(`/settings/${CONTACT_KEYS[0]}`)
+      .then((res) => {
+        const d = res?.data;
+        const pick = (v) =>
+          typeof v === "string" || typeof v === "number" ? String(v) : "";
+        if (active) {
+          setContactForm({
+            email: pick(d?.email),
+            phone: pick(d?.phone),
+            telegram: pick(d?.telegram),
+          });
+        }
+      })
+      .catch(() => {
+        if (active) setContactError("Couldn't load contact details.");
+      })
+      .finally(() => {
+        if (active) setContactLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (!user) return null;
 
@@ -232,6 +276,40 @@ export default function Profile() {
       }
     } finally {
       setSavingPwd(false);
+    }
+  };
+
+  const handleSaveContact = async (e) => {
+    e.preventDefault();
+    setContactError(null);
+    setContactMessage(null);
+    if (!contactForm.email.trim()) {
+      setContactError("Email is required.");
+      return;
+    }
+    setSavingContact(true);
+    try {
+      const body = {
+        email: contactForm.email.trim(),
+        phone: contactForm.phone.trim(),
+        telegram: contactForm.telegram.trim(),
+      };
+      await Promise.all(
+        CONTACT_KEYS.map((key) =>
+          api.put(`/settings/${key}`, body, {
+            headers: { "Content-Type": "application/json" },
+          }),
+        ),
+      );
+      setContactMessage(
+        "Saved — these details are shown under “Contact your administrator” on the sign-in page.",
+      );
+    } catch (err) {
+      setContactError(
+        err?.response?.data?.message ?? "Failed to save contact details.",
+      );
+    } finally {
+      setSavingContact(false);
     }
   };
 
@@ -598,6 +676,92 @@ export default function Profile() {
             <div className="px-5 py-4">
               <TwoFactorSetup />
             </div>
+          </div>
+
+          {/* Contact administrator (shown on the sign-in page) */}
+          <div className="bg-white rounded-xl border border-[#E5E7EB]">
+            <div className="flex items-center gap-2.5 border-b border-[#F0F1F3] px-5 py-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#FEF6EC] text-[#F4972B]">
+                <LifeBuoy size={15} />
+              </div>
+              <div>
+                <h2 className="font-display font-semibold text-[15px] text-[#10151F]">
+                  Contact administrator
+                </h2>
+                <p className="font-body text-[13px] text-[#6B7280] mt-0.5">
+                  Details users see via “Contact your administrator” on the
+                  sign-in page. Admins only.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveContact} className="px-5 py-4">
+              {contactLoading && (
+                <div className="py-4 text-center font-body text-[13px] text-[#6B7280]">
+                  Loading contact details…
+                </div>
+              )}
+
+              {!contactLoading && (
+                <>
+                  {contactMessage && (
+                    <div className="mb-3 rounded-lg bg-[#EFFBF3] border border-[#A6F0C6] px-3 py-2 font-body text-[13px] text-[#15803D]">
+                      {contactMessage}
+                    </div>
+                  )}
+                  {contactError && (
+                    <div className="mb-3 rounded-lg bg-[#FEF3F2] border border-[#FDA29B] px-3 py-2 font-body text-[13px] text-[#B42318]">
+                      {contactError}
+                    </div>
+                  )}
+
+                  <label className={labelClass}>Email</label>
+                  <input
+                    required
+                    type="email"
+                    value={contactForm.email}
+                    onChange={(e) =>
+                      setContactForm((f) => ({ ...f, email: e.target.value }))
+                    }
+                    className={`${inputClass} mb-1`}
+                    placeholder="admin@company.com"
+                  />
+
+                  <label className={`${labelClass} mt-3`}>Phone</label>
+                  <input
+                    value={contactForm.phone}
+                    onChange={(e) =>
+                      setContactForm((f) => ({ ...f, phone: e.target.value }))
+                    }
+                    className={`${inputClass} mb-1`}
+                    placeholder="+855 12 345 678"
+                  />
+
+                  <label className={`${labelClass} mt-3`}>Telegram</label>
+                  <input
+                    value={contactForm.telegram}
+                    onChange={(e) =>
+                      setContactForm((f) => ({
+                        ...f,
+                        telegram: e.target.value,
+                      }))
+                    }
+                    className={`${inputClass} mb-1`}
+                    placeholder="https://t.me/your_username"
+                  />
+
+                  <div className="flex justify-end mt-4">
+                    <button
+                      type="submit"
+                      disabled={savingContact}
+                      className="font-body text-[13px] font-medium text-white bg-[#2F5FEA] rounded-lg px-4 py-2.5 hover:bg-[#1E3FA6] transition disabled:opacity-50"
+                    >
+                      {savingContact ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </form>
           </div>
         </div>
       </div>

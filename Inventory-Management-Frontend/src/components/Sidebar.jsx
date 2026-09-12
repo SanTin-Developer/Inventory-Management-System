@@ -52,30 +52,16 @@ export default function Sidebar({
         <div
           className={`flex items-center gap-2.5 h-16 shrink-0 ${collapsed ? "justify-center px-0" : "px-5"}`}
         >
-          <svg
+          <img
+            src="/logo.png"
+            alt="Tomnenh KH"
             width="28"
             height="28"
-            viewBox="0 0 34 34"
-            fill="none"
-            className="shrink-0"
-          >
-            <rect width="34" height="34" rx="9" fill="#2F5FEA" />
-            <path
-              d="M17 8L24.5 12.2V21.8L17 26L9.5 21.8V12.2L17 8Z"
-              stroke="white"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M9.5 12.2L17 16.3M17 16.3L24.5 12.2M17 16.3V26"
-              stroke="white"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-          </svg>
+            className="shrink-0 rounded-lg object-cover"
+          />
           {!collapsed && (
             <div className="font-display font-semibold text-[16px] text-[#10151F] leading-none">
-              SMART INVENTORY
+              Tomnenh KH
             </div>
           )}
         </div>

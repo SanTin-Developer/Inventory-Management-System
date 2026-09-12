@@ -4,12 +4,15 @@ import QRCode from "qrcode";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function TwoFactorSetup() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [secret, setSecret] = useState(null);
   const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [showDisable, setShowDisable] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [disabling, setDisabling] = useState(false);
   const [recoveryCodes, setRecoveryCodes] = useState(null);
   const canvasRef = useRef(null);
 
@@ -54,6 +57,26 @@ export default function TwoFactorSetup() {
       .finally(() => setLoading(false));
   };
 
+  const disable2FA = () => {
+    if (!password) {
+      setError("Enter your password to disable 2FA.");
+      return;
+    }
+    setDisabling(true);
+    setError("");
+    api
+      .post("/2fa/disable", { password })
+      .then(() => {
+        setUser({ ...user, two_factor_enabled: false });
+        setShowDisable(false);
+        setPassword("");
+      })
+      .catch((err) => {
+        setError(err.response?.data?.message ?? "Couldn't disable 2FA.");
+      })
+      .finally(() => setDisabling(false));
+  };
+
   if (recoveryCodes) {
     return (
       <div className="max-w-md">
@@ -79,9 +102,47 @@ export default function TwoFactorSetup() {
         <h2 className="font-display font-semibold text-[16px] mb-2">
           Two-factor authentication is enabled ✓
         </h2>
-        <p className="text-[13px] text-[#6B7280]">
+        <p className="text-[13px] text-[#6B7280] mb-4">
           Your account is protected with an authenticator app.
         </p>
+        {showDisable ? (
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              className="font-body text-[13px] border border-[#E5E7EB] rounded-lg px-3 py-2 mb-2 w-full"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={disable2FA}
+                disabled={disabling}
+                className="font-body text-[13px] font-medium text-white bg-[#EF4444] rounded-lg px-4 py-2 hover:bg-[#DC2626] transition disabled:opacity-60"
+              >
+                {disabling ? "Disabling…" : "Confirm disable"}
+              </button>
+              <button
+                onClick={() => {
+                  setShowDisable(false);
+                  setPassword("");
+                  setError("");
+                }}
+                className="font-body text-[13px] font-medium text-[#6B7280] bg-[#F3F4F6] rounded-lg px-4 py-2 hover:bg-[#E5E7EB] transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowDisable(true)}
+            className="font-body text-[13px] font-medium text-[#EF4444] border border-[#EF4444] rounded-lg px-4 py-2 hover:bg-[#FEF2F2] transition"
+          >
+            Disable 2FA
+          </button>
+        )}
+        {error && <p className="text-[13px] text-[#EF4444] mt-2">{error}</p>}
       </div>
     );
   }

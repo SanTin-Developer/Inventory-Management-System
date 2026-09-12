@@ -42,25 +42,22 @@ export default function Login() {
     setContactError("");
 
     try {
-      const [emailRes, phoneRes, telegramRes] = await Promise.all([
-        api.get(`/settings/${SETTING_KEYS.email}`),
-        api.get(`/settings/${SETTING_KEYS.phone}`),
-        api.get(`/settings/${SETTING_KEYS.telegram}`),
-      ]);
+      // The settings row stores the whole { email, phone, telegram } object,
+      // so one fetch on any of the keys gives us everything.
+      const res = await api.get(`/settings/${SETTING_KEYS.email}`);
+      const data = res?.data;
 
       // Only accept plain strings/numbers — anything else (missing key,
       // empty object, null) becomes "" so it never hits JSX as an object
-      const extractValue = (res) => {
-        const v = res?.data?.value;
-        return typeof v === "string" || typeof v === "number" ? String(v) : "";
-      };
+      const pick = (v) =>
+        typeof v === "string" || typeof v === "number" ? String(v) : "";
 
       setContactInfo({
-        email: extractValue(emailRes),
-        phone: extractValue(phoneRes),
-        telegram: extractValue(telegramRes),
+        email: pick(data?.email),
+        phone: pick(data?.phone),
+        telegram: pick(data?.telegram),
       });
-    } catch (err) {
+    } catch {
       setContactError("Couldn't load contact details. Please try again.");
     } finally {
       setContactLoading(false);
@@ -147,24 +144,16 @@ export default function Login() {
         <div className="w-full max-w-sm mx-auto">
           {/* Brand mark */}
           <div className="flex items-center gap-2.5 mb-10">
-            <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
-              <rect width="34" height="34" rx="9" fill="#2F5FEA" />
-              <path
-                d="M17 8L24.5 12.2V21.8L17 26L9.5 21.8V12.2L17 8Z"
-                stroke="white"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M9.5 12.2L17 16.3M17 16.3L24.5 12.2M17 16.3V26"
-                stroke="white"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <img
+              src="/logo.png"
+              alt="Tomnenh KH"
+              width="34"
+              height="34"
+              className="shrink-0 rounded-lg object-cover"
+            />
             <div>
               <div className="font-display font-semibold text-[19px] leading-none text-[#10151F]">
-                SMART INVENTORY
+                Tomnenh KH
               </div>
               <div className="font-mono text-[10px] tracking-[0.14em] text-[#8B92A3] mt-1 uppercase">
                 Inventory OS
@@ -432,10 +421,10 @@ export default function Login() {
 
         <div className="absolute top-8 right-8 text-right">
           <div className="font-display font-semibold text-[22px] text-white/90">
-            SMART INVENTORY OS
+            TOMNENH KH
           </div>
           <div className="font-mono text-[10px] tracking-[0.14em] text-white/50 uppercase mt-0.5">
-            Smart Inventory Solutions
+            Inventory Solutions
           </div>
         </div>
 
