@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Mail,
   Phone,
@@ -14,6 +14,7 @@ import {
   UserRound,
   Pencil,
   LifeBuoy,
+  Camera,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../services/api";
@@ -75,6 +76,9 @@ export default function Profile() {
   });
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(user?.image_url ?? null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState(null);
+  const avatarInputRef = useRef(null);
   const [infoErrors, setInfoErrors] = useState({});
   const [infoError, setInfoError] = useState(null);
   const [infoMessage, setInfoMessage] = useState(null);
@@ -146,6 +150,45 @@ export default function Profile() {
     if (!file) return;
     setImage(file);
     setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarError("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("Profile image must be under 5 MB.");
+      return;
+    }
+
+    setAvatarError(null);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+    setAvatarUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await api.put(`/users/${user.user_id}`, fd);
+      URL.revokeObjectURL(previewUrl);
+      const newUrl = res?.data?.image_url ?? previewUrl;
+      setImagePreview(newUrl);
+      if (setUser) {
+        setUser({ ...user, image_url: newUrl });
+      }
+    } catch (err) {
+      URL.revokeObjectURL(previewUrl);
+      setImagePreview(user.image_url ?? null);
+      setAvatarError(
+        err?.response?.data?.message ?? "Failed to update profile photo.",
+      );
+    } finally {
+      setAvatarUploading(false);
+    }
   };
 
   const cancelInfoEdit = () => {
@@ -339,21 +382,44 @@ export default function Profile() {
         {/* Identity card */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 h-fit">
           <div className="flex flex-col items-center text-center">
-            <div className="relative">
-              <div className="h-20 w-20 overflow-hidden rounded-full bg-[#F3F4F6]">
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt={user.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[#9CA3AF]">
-                    <UserRound size={28} />
-                  </div>
-                )}
+<div className="relative">
+                <div className="h-20 w-20 overflow-hidden rounded-full bg-[#F3F4F6]">
+                  {imagePreview ? (
+                    <img
+                      src={imagePreview}
+                      alt={user.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[#9CA3AF]">
+                      <UserRound size={28} />
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={avatarUploading}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E7EB] bg-white px-3 py-1.5 font-body text-[12px] font-medium text-[#374151] hover:bg-[#F3F4F6] transition disabled:opacity-50"
+                >
+                  <Camera size={13} />
+                  {avatarUploading ? "Uploading…" : "Change photo"}
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+              </div>
+              {avatarError && (
+                <p className="mt-2 font-body text-[12px] text-[#EF4444]">
+                  {avatarError}
+                </p>
+              )}
             <h2 className="font-display font-semibold text-[16px] text-[#10151F] mt-3">
               {user.name}
             </h2>
