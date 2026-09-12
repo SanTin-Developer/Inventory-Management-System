@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { salesApi } from "../../services/service";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../components/Toastsystem";
 
 function calculateDiscount(subtotal) {
   if (subtotal >= 500) return 50;
@@ -18,6 +19,7 @@ export default function SaleForm({
   onSaved,
 }) {
   const { user } = useAuth();
+  const toast = useToast();
   const isEditing = !!sale;
 
   const [customerId, setCustomerId] = useState(sale?.customer_id ?? "");
@@ -130,9 +132,15 @@ export default function SaleForm({
       } else {
         await salesApi.create(payload);
       }
+      toast.success(
+        isEditing ? "Sale updated" : "Sale created",
+        `The sale was ${isEditing ? "updated" : "created"} successfully.`,
+      );
       onSaved();
     } catch (err) {
-      setError(err?.response?.data?.message ?? "Failed to save sale.");
+      const message = err?.response?.data?.message ?? "Failed to save sale.";
+      setError(message);
+      toast.error(isEditing ? "Update failed" : "Create failed", message);
     } finally {
       setSaving(false);
     }
@@ -248,7 +256,7 @@ export default function SaleForm({
                     Number(product.quantity_in_stock);
                 return (
                   <div key={i}>
-                    <div className="flex items-center gap-2 rounded-lg border border-[#E5E7EB] p-2">
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[#E5E7EB] p-2">
                       <select
                         value={line.product_id}
                         onChange={(e) =>

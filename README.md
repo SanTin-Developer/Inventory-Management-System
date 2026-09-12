@@ -13,6 +13,29 @@ A modern, full-stack **Inventory Management System** built for a mid-size tradin
 
 ---
 
+## Live Demo & Production Deployments
+
+| Layer | Platform | URL |
+| --- | --- | --- |
+| **Admin Console** (React frontend) | Vercel | https://inventory-management-system-iota-one-97.vercel.app |
+| **REST API** (Laravel backend) | Render | https://inventory-management-system-6xpb.onrender.com/api |
+
+**Demo login** (Administrator):
+
+| Email | Password |
+| --- | --- |
+| `santinoeurn0601@gmail.com` | `DemoInventory2026!` |
+
+### Production Overview
+
+- **Frontend** — Vite SPA deployed on **Vercel** with a `vercel.json` SPA rewrite (every route falls back to `index.html`, so deep links work). The API base URL is baked into the build via `VITE_API_URL` (defaults to `https://inventory-management-system-6xpb.onrender.com/api`).
+- **Backend** — Laravel app deployed on **Render** as a Docker service. The image serves HTTP via `php artisan serve --host=0.0.0.0 --port=${PORT:-8080}`; the entrypoint runs `php artisan migrate --seed --force` (idempotent) before booting.
+- **Database** — **Supabase PostgreSQL 16** in production. Use the direct/session connection (`:5432`) for normal operation or the transaction pooler (`:6543`) where pooling is required.
+- **No Redis in production** — Render runs with file cache, file sessions, and synchronous queues (`CACHE_STORE=file`, `SESSION_DRIVER=file`, `QUEUE_CONNECTION=sync`), so no extra services are needed.
+- **CORS** — the backend trusts the Vercel origin (`FRONTEND_URL`) so the browser can talk to the API directly.
+
+---
+
 ## 1. System Architecture
 
 Two independent application layers communicate over a standardized REST API (`/api`):
@@ -197,11 +220,13 @@ Visit:
 
 ## 6. Seeded Demo Account
 
-The `DatabaseSeeder` provisions the following pre-configured credential:
+The local `DatabaseSeeder` provisions the following pre-configured credential:
 
 | Role | Email | Password | Allowed Access |
 | --- | --- | --- | --- |
 | **Administrator** | `admin@yourcompany.com` | `ChangeMe123!` | Full system authority; users, roles, products, purchases, sales, reports, settings. |
+
+In production, the idempotent `ProductionDemoSeeder` (run automatically by the container entrypoint) creates the live demo Administrator account shown in the [Live Demo section](#live-demo--production-deployments). Seeders match users by `user_code` **or** email so repeated runs never duplicate rows.
 
 > [!WARNING]
 > **SECURITY WARNING: This seeded credential is for local development and demonstration testing ONLY.

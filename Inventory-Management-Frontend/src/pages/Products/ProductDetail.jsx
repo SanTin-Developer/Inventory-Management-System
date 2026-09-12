@@ -4,6 +4,8 @@ import { ArrowLeft, Pencil, Trash2, Loader2 } from "lucide-react";
 import { productService } from "../../services/service";
 import ProductForm from "./ProductForm";
 import api from "../../services/api";
+import { useAlert } from "../../components/Alertsystem";
+import { useToast } from "../../components/Toastsystem";
 
 const COLORS = {
   danger: "#EF4444",
@@ -45,6 +47,8 @@ function Field({ label, value }) {
 export default function ProductView() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { confirm } = useAlert();
+  const toast = useToast();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -60,15 +64,26 @@ export default function ProductView() {
   }, [id]);
 
   const handleDelete = async () => {
-    if (
-      !window.confirm(`Delete "${product.product_name}"? This can't be undone.`)
-    )
-      return;
+    const confirmed = await confirm({
+      type: "error",
+      title: "Delete product",
+      message: `Delete "${product.product_name}"? This can't be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
     try {
       await productService.deleteProduct(product.product_id);
+      toast.success(
+        "Product deleted",
+        `"${product.product_name}" was deleted successfully.`,
+      );
       navigate("/products");
     } catch (err) {
-      alert(err.response?.data?.message || "Couldn't delete this product.");
+      toast.error(
+        "Delete failed",
+        err.response?.data?.message || "Couldn't delete this product.",
+      );
     }
   };
 

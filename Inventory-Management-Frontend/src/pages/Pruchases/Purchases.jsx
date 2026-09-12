@@ -22,6 +22,8 @@ import { extractPaginated } from "../../utils/extractPaginated";
 import PurchaseForm from "./PurchaseForm";
 import PurchaseDetail from "./PurchaseDetail";
 import api from "../../services/api";
+import { useToast } from "../../components/Toastsystem";
+import { useAlert } from "../../components/Alertsystem";
 
 const STATUS_STYLE = {
   Received: { color: "#22C55E", bg: "#EFFBF3" },
@@ -40,6 +42,8 @@ const currency = (n) => {
 };
 
 export default function Purchases() {
+  const { confirm } = useAlert();
+  const toast = useToast();
   const [purchases, setPurchases] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -122,23 +126,38 @@ export default function Purchases() {
       setEditingPurchase(full);
       setShowForm(true);
     } catch (err) {
-      alert(err?.response?.data?.message ?? "Couldn't load this purchase for editing.");
+      toast.error(
+        "Edit failed",
+        err?.response?.data?.message ??
+          "Couldn't load this purchase for editing.",
+      );
     }
   };
 
   const handleDelete = async (p) => {
-    if (
-      !window.confirm(
-        `Delete this purchase from "${p.supplier?.supplier_name ?? "supplier"}"? This can't be undone.`,
-      )
-    )
-      return;
+    const confirmed = await confirm({
+      type: "error",
+      title: "Delete purchase",
+      message: `Delete this purchase from "${
+        p.supplier?.supplier_name ?? "supplier"
+      }"? This can't be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
     setDeletingId(p.purchase_id);
     try {
       await purchasesApi.remove(p.purchase_id);
       load(statusFilter, page);
+      toast.success(
+        "Purchase deleted",
+        `Purchase #${p.purchase_id} was deleted successfully.`,
+      );
     } catch (err) {
-      alert(err?.response?.data?.message ?? "Couldn't delete this purchase.");
+      toast.error(
+        "Delete failed",
+        err?.response?.data?.message ?? "Couldn't delete this purchase.",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -276,8 +295,8 @@ export default function Purchases() {
       )}
 
       {/* Table */}
-      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <table className="w-full font-body text-[13.5px]">
+      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
+        <table className="w-full min-w-[640px] font-body text-[13.5px]">
           <thead>
             <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
               <th className="px-5 py-3 font-medium">Supplier</th>

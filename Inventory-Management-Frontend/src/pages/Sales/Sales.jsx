@@ -18,6 +18,8 @@ import { extractPaginated } from "../../utils/extractPaginated";
 import SaleForm from "./SaleForm";
 import SaleDetail from "./SaleDetail";
 import api from "../../services/api";
+import { useToast } from "../../components/Toastsystem";
+import { useAlert } from "../../components/Alertsystem";
 
 const STATUS_STYLE = {
   Completed: { color: "#22C55E", bg: "#EFFBF3" },
@@ -46,6 +48,8 @@ const discountPercentOf = (s) => {
 };
 
 export default function Sales() {
+  const { confirm } = useAlert();
+  const toast = useToast();
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -141,18 +145,32 @@ export default function Sales() {
       setEditingSale(full);
       setShowForm(true);
     } catch (err) {
-      alert("Couldn't load this sale for editing.");
+      toast.error("Edit failed", "Couldn't load this sale for editing.");
     }
   };
 
   const handleDelete = async (s) => {
-    if (!window.confirm(`Delete this sale? This can't be undone.`)) return;
+    const confirmed = await confirm({
+      type: "error",
+      title: "Delete sale",
+      message: "Delete this sale? This can't be undone.",
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
     setDeletingId(s.sale_id);
     try {
       await salesApi.remove(s.sale_id);
       load(statusFilter, page);
+      toast.success(
+        "Sale deleted",
+        `Sale #${s.sale_id} was deleted successfully.`,
+      );
     } catch (err) {
-      alert(err?.response?.data?.message ?? "Couldn't delete this sale.");
+      toast.error(
+        "Delete failed",
+        err?.response?.data?.message ?? "Couldn't delete this sale.",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -298,8 +316,8 @@ export default function Sales() {
         </div>
       )}
 
-      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <table className="w-full font-body text-[13.5px]">
+      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
+        <table className="w-full min-w-[640px] font-body text-[13.5px]">
           <thead>
             <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
               <th className="px-5 py-3 font-medium">Customer</th>

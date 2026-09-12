@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import { purchasesApi } from "../../services/service";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../components/Toastsystem";
 
 export default function PurchaseForm({
   purchase,
@@ -11,6 +12,7 @@ export default function PurchaseForm({
   onSaved,
 }) {
   const { user } = useAuth();
+  const toast = useToast();
   const isEdit = Boolean(purchase);
   const [supplierId, setSupplierId] = useState(
     purchase?.supplier_id ?? suppliers[0]?.supplier_id ?? "",
@@ -82,12 +84,19 @@ export default function PurchaseForm({
       } else {
         await purchasesApi.create(payload);
       }
+      toast.success(
+        isEdit ? "Purchase updated" : "Purchase created",
+        `The purchase was ${
+          isEdit ? "updated" : "created"
+        } successfully.`,
+      );
       onSaved();
     } catch (err) {
-      setError(
+      const message =
         err?.response?.data?.message ??
-          (isEdit ? "Failed to update purchase." : "Failed to create purchase."),
-      );
+        (isEdit ? "Failed to update purchase." : "Failed to create purchase.");
+      setError(message);
+      toast.error(isEdit ? "Update failed" : "Create failed", message);
     } finally {
       setSaving(false);
     }
@@ -167,7 +176,7 @@ export default function PurchaseForm({
             {lines.map((line, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 rounded-lg border border-slate-100 p-2"
+                className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 p-2"
               >
                 <select
                   value={line.product_id}

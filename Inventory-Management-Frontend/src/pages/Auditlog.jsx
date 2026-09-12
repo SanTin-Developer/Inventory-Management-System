@@ -211,8 +211,8 @@ export default function AuditLog() {
       )}
 
       {/* Table */}
-      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <table className="w-full font-body text-[13.5px]">
+      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
+        <table className="w-full min-w-[640px] font-body text-[13.5px]">
           <thead>
             <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
               <th className="px-5 py-3 font-medium">User</th>

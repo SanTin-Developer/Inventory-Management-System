@@ -15,8 +15,11 @@ import {
 } from "lucide-react";
 import { suppliersApi } from "../services/service";
 import { extractPaginated } from "../utils/extractPaginated";
+import { useAlert } from "../components/Alertsystem";
+import { useToast } from "../components/Toastsystem";
 
 function SupplierForm({ supplier, onClose, onSaved }) {
+  const toast = useToast();
   const isEditing = !!supplier;
   const [form, setForm] = useState({
     supplier_name: supplier?.supplier_name ?? "",
@@ -38,12 +41,21 @@ function SupplierForm({ supplier, onClose, onSaved }) {
       } else {
         await suppliersApi.create(form);
       }
+      toast.success(
+        isEditing ? "Supplier updated" : "Supplier added",
+        `"${form.supplier_name}" was ${
+          isEditing ? "updated" : "added"
+        } successfully.`,
+      );
       onSaved();
     } catch (err) {
       if (err?.response?.status === 422) {
         setErrors(err.response.data.errors ?? {});
       } else {
-        alert(err?.response?.data?.message ?? "Failed to save supplier.");
+        toast.error(
+          "Save failed",
+          err?.response?.data?.message ?? "Failed to save supplier.",
+        );
       }
     } finally {
       setSaving(false);
@@ -225,6 +237,8 @@ function SupplierDetail({ supplier, onClose, onEdit }) {
 }
 
 export default function Suppliers() {
+  const { confirm } = useAlert();
+  const toast = useToast();
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -267,14 +281,27 @@ export default function Suppliers() {
   };
 
   const handleDelete = async (s) => {
-    if (!window.confirm(`Delete "${s.supplier_name}"? This can't be undone.`))
-      return;
+    const confirmed = await confirm({
+      type: "error",
+      title: "Delete supplier",
+      message: `Delete "${s.supplier_name}"? This can't be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
     setDeletingId(s.supplier_id);
     try {
       await suppliersApi.remove(s.supplier_id);
       load(page);
+      toast.success(
+        "Supplier deleted",
+        `"${s.supplier_name}" was deleted successfully.`,
+      );
     } catch (err) {
-      alert(err?.response?.data?.message ?? "Couldn't delete this supplier.");
+      toast.error(
+        "Delete failed",
+        err?.response?.data?.message ?? "Couldn't delete this supplier.",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -359,8 +386,8 @@ export default function Suppliers() {
       )}
 
       {/* Table */}
-      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <table className="w-full font-body text-[13.5px]">
+      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
+        <table className="w-full min-w-[640px] font-body text-[13.5px]">
           <thead>
             <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
               <th className="px-5 py-3 font-medium">Name</th>

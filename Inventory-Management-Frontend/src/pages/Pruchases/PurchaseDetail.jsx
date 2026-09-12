@@ -137,8 +137,8 @@ export default function PurchaseDetail({ purchaseId, onClose }) {
                   No line items available for this purchase.
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-lg border border-slate-100">
-                  <table className="w-full text-sm">
+                <div className="overflow-x-auto rounded-lg border border-slate-100">
+                  <table className="w-full min-w-[480px] text-sm">
                     <thead>
                       <tr className="bg-slate-50 text-left text-xs text-slate-500">
                         <th className="px-3 py-2 font-medium">Product</th>

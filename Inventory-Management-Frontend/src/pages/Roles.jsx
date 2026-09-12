@@ -16,8 +16,10 @@ import {
 import { rolesApi } from "../services/service";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../components/Toastsystem";
 
 function RoleForm({ role, onClose, onSaved }) {
+  const toast = useToast();
   const isEditing = !!role;
   const [form, setForm] = useState({
     role_name: role?.role_name ?? "",
@@ -46,12 +48,20 @@ function RoleForm({ role, onClose, onSaved }) {
       } else {
         await rolesApi.create(form);
       }
+      toast.success(
+        isEditing ? "Role updated" : "Role added",
+        `"${form.role_name}" was ${
+          isEditing ? "updated" : "added"
+        } successfully.`,
+      );
       onSaved();
     } catch (err) {
       if (err?.response?.status === 422) {
         setErrors(err.response.data.errors ?? {});
       } else {
-        setFormError(err?.response?.data?.message ?? "Failed to save role.");
+        const message = err?.response?.data?.message ?? "Failed to save role.";
+        setFormError(message);
+        toast.error(isEditing ? "Update failed" : "Add failed", message);
       }
     } finally {
       setSaving(false);
@@ -206,6 +216,7 @@ function RoleDetail({ role, onClose, onEdit }) {
 
 // --- NEW: salary range edit modal ---
 function SalaryRangeForm({ role, onClose, onSaved }) {
+  const toast = useToast();
   const [min, setMin] = useState(role.default_salary_min ?? "");
   const [max, setMax] = useState(role.default_salary_max ?? "");
   const [error, setError] = useState("");
@@ -235,12 +246,17 @@ function SalaryRangeForm({ role, onClose, onSaved }) {
         default_salary_min: min,
         default_salary_max: max,
       });
+      toast.success(
+        "Salary range updated",
+        `Salary range for ${role.role_name} was updated.`,
+      );
       onSaved();
     } catch (err) {
-      setError(
+      const message =
         err.response?.data?.message ||
-          "Couldn't update the salary range. Try again.",
-      );
+        "Couldn't update the salary range. Try again.";
+      setError(message);
+      toast.error("Update failed", message);
     } finally {
       setSaving(false);
     }
@@ -332,6 +348,7 @@ function SalaryRangeForm({ role, onClose, onSaved }) {
 
 export default function Roles() {
   const { user } = useAuth();
+  const toast = useToast();
   const canManageSalaryRanges = ["Admin", "Manager", "HR Officer"].includes(
     user?.role?.role_name,
   );
@@ -398,8 +415,14 @@ export default function Roles() {
       await rolesApi.remove(deleteTarget.role_id);
       setDeleteTarget(null);
       load(page);
+      toast.success(
+        "Role deleted",
+        `"${deleteTarget.role_name}" was deleted successfully.`,
+      );
     } catch (err) {
-      setError(err?.response?.data?.message ?? "Failed to delete role.");
+      const message = err?.response?.data?.message ?? "Failed to delete role.";
+      setError(message);
+      toast.error("Delete failed", message);
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -482,8 +505,8 @@ export default function Roles() {
       )}
 
       {/* Table */}
-      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <table className="w-full font-body text-[13.5px]">
+      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
+        <table className="w-full min-w-[640px] font-body text-[13.5px]">
           <thead>
             <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
               <th className="px-5 py-3 font-medium">Role</th>

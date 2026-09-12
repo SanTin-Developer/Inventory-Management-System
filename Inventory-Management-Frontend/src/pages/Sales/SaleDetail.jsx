@@ -240,8 +240,8 @@ export default function SaleDetail({ saleId, onClose }) {
                 <p className="font-mono text-[10.5px] uppercase tracking-wide text-[#9CA3AF] mb-2">
                   Items
                 </p>
-                <div className="rounded-lg border border-[#F0F1F3] overflow-hidden">
-                  <table className="w-full font-body text-[13px]">
+                <div className="rounded-lg border border-[#F0F1F3] overflow-x-auto">
+                  <table className="w-full min-w-[480px] font-body text-[13px]">
                     <thead>
                       <tr className="bg-[#F9FAFB] text-[#9CA3AF] text-[11px] uppercase font-mono">
                         <th className="px-3 py-2 text-left font-medium">

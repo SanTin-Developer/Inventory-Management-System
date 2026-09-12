@@ -13,8 +13,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { customersApi } from "../services/service";
+import { useToast } from "../components/Toastsystem";
 
 function CustomerForm({ customer, onClose, onSaved }) {
+  const toast = useToast();
   const isEditing = !!customer;
   const [form, setForm] = useState({
     customer_name: customer?.customer_name ?? "",
@@ -45,14 +47,21 @@ function CustomerForm({ customer, onClose, onSaved }) {
       } else {
         await customersApi.create(form);
       }
+      toast.success(
+        isEditing ? "Customer updated" : "Customer added",
+        `"${form.customer_name}" was ${
+          isEditing ? "updated" : "added"
+        } successfully.`,
+      );
       onSaved();
     } catch (err) {
       if (err?.response?.status === 422) {
         setErrors(err.response.data.errors ?? {});
       } else {
-        setFormError(
-          err?.response?.data?.message ?? "Failed to save customer.",
-        );
+        const message =
+          err?.response?.data?.message ?? "Failed to save customer.";
+        setFormError(message);
+        toast.error(isEditing ? "Update failed" : "Add failed", message);
       }
     } finally {
       setSaving(false);
@@ -223,6 +232,7 @@ export function CustomerDetail({ customer, onClose, onEdit }) {
 }
 
 export default function Customers() {
+  const toast = useToast();
   const [customers, setCustomers] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -292,8 +302,15 @@ export default function Customers() {
       await customersApi.remove(deleteTarget.customer_id);
       setDeleteTarget(null);
       load(page);
+      toast.success(
+        "Customer deleted",
+        `"${deleteTarget.customer_name}" was deleted successfully.`,
+      );
     } catch (err) {
-      setError(err?.response?.data?.message ?? "Failed to delete customer.");
+      const message =
+        err?.response?.data?.message ?? "Failed to delete customer.";
+      setError(message);
+      toast.error("Delete failed", message);
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -367,8 +384,8 @@ export default function Customers() {
       )}
 
       {/* Table */}
-      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <table className="w-full font-body text-[13.5px]">
+      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
+        <table className="w-full min-w-[640px] font-body text-[13.5px]">
           <thead>
             <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
               <th className="px-5 py-3 font-medium">Name</th>

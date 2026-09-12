@@ -197,14 +197,14 @@ export default function SalesPurchaseAnalytics() {
       {/* Top sellers / Slow movers side by side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 px-6 mb-8">
         {/* Top sellers */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
           <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[#F0F1F3]">
             <TrendingUp size={15} style={{ color: "#22C55E" }} />
             <h2 className="font-display font-semibold text-[14px] text-[#10151F]">
               Top-selling products
             </h2>
           </div>
-          <table className="w-full font-body text-[13.5px]">
+          <table className="w-full min-w-[640px] font-body text-[13.5px]">
             <thead>
               <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
                 <th className="px-5 py-2.5 font-medium">Product</th>
@@ -259,14 +259,14 @@ export default function SalesPurchaseAnalytics() {
         </div>
 
         {/* Slow movers */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
           <div className="flex items-center gap-2 px-5 py-3.5 border-b border-[#F0F1F3]">
             <TrendingDown size={15} style={{ color: "#EF4444" }} />
             <h2 className="font-display font-semibold text-[14px] text-[#10151F]">
               Slow-moving products
             </h2>
           </div>
-          <table className="w-full font-body text-[13.5px]">
+          <table className="w-full min-w-[640px] font-body text-[13.5px]">
             <thead>
               <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
                 <th className="px-5 py-2.5 font-medium">Product</th>

@@ -405,7 +405,7 @@ export default function Dashboard() {
 
       {/* Low stock + recent activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 px-6 mt-4 pb-8">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0F1F3]">
             <h2 className="font-display font-semibold text-[15px] text-[#10151F]">
               Needs restocking
@@ -427,7 +427,7 @@ export default function Dashboard() {
               ))}
             </div>
           ) : stats?.low_stock_items?.length ? (
-            <table className="w-full font-body text-[13px]">
+            <table className="w-full min-w-[640px] font-body text-[13px]">
               <thead>
                 <tr className="text-left text-[#9CA3AF] text-[11.5px] uppercase font-mono tracking-wide">
                   <th className="px-5 py-2.5 font-medium">Product</th>
@@ -466,7 +466,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
           <div className="px-5 py-4 border-b border-[#F0F1F3]">
             <h2 className="font-display font-semibold text-[15px] text-[#10151F]">
               Recent activity

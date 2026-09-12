@@ -13,8 +13,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { departmentsApi } from "../services/service";
+import { useToast } from "../components/Toastsystem";
 
 function DepartmentForm({ department, onClose, onSaved }) {
+  const toast = useToast();
   const isEditing = !!department;
   const [form, setForm] = useState({
     department_name: department?.department_name ?? "",
@@ -43,14 +45,21 @@ function DepartmentForm({ department, onClose, onSaved }) {
       } else {
         await departmentsApi.create(form);
       }
+      toast.success(
+        isEditing ? "Department updated" : "Department added",
+        `"${form.department_name}" was ${
+          isEditing ? "updated" : "added"
+        } successfully.`,
+      );
       onSaved();
     } catch (err) {
       if (err?.response?.status === 422) {
         setErrors(err.response.data.errors ?? {});
       } else {
-        setFormError(
-          err?.response?.data?.message ?? "Failed to save department.",
-        );
+        const message =
+          err?.response?.data?.message ?? "Failed to save department.";
+        setFormError(message);
+        toast.error(isEditing ? "Update failed" : "Add failed", message);
       }
     } finally {
       setSaving(false);
@@ -208,6 +217,7 @@ function DepartmentDetail({ department, onClose, onEdit }) {
 }
 
 export default function Departments() {
+  const toast = useToast();
   const [departments, setDepartments] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -279,8 +289,15 @@ export default function Departments() {
       await departmentsApi.remove(deleteTarget.department_id);
       setDeleteTarget(null);
       load(page);
+      toast.success(
+        "Department deleted",
+        `"${deleteTarget.department_name}" was deleted successfully.`,
+      );
     } catch (err) {
-      setError(err?.response?.data?.message ?? "Failed to delete department.");
+      const message =
+        err?.response?.data?.message ?? "Failed to delete department.";
+      setError(message);
+      toast.error("Delete failed", message);
       setDeleteTarget(null);
     } finally {
       setDeleting(false);
@@ -354,8 +371,8 @@ export default function Departments() {
       )}
 
       {/* Table */}
-      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <table className="w-full font-body text-[13.5px]">
+      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
+        <table className="w-full min-w-[640px] font-body text-[13.5px]">
           <thead>
             <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
               <th className="px-5 py-3 font-medium">Name</th>

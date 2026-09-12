@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { usersApi, rolesApi, departmentsApi } from "../services/service";
 import api from "../services/api";
+import { useToast } from "../components/Toastsystem";
+import { useAlert } from "../components/Alertsystem";
 
 const ROLE_STYLE = {
   Admin: { color: "#2F5FEA", bg: "#EFF3FE" },
@@ -37,6 +39,7 @@ const STATUS_STYLE = {
 };
 
 function UserForm({ user, roles, departments, onClose, onSaved }) {
+  const toast = useToast();
   const isEditing = !!user;
   const [form, setForm] = useState({
     name: user?.name ?? "",
@@ -100,11 +103,18 @@ function UserForm({ user, roles, departments, onClose, onSaved }) {
         }
       }
       onSaved();
+      toast.success(
+        isEditing ? "User updated" : "User added",
+        `"${form.name}" was ${isEditing ? "updated" : "added"} successfully.`,
+      );
     } catch (err) {
       if (err?.response?.status === 422) {
         setErrors(err.response.data.errors ?? {});
       } else {
-        alert(err?.response?.data?.message ?? "Failed to save user.");
+        toast.error(
+          "Save failed",
+          err?.response?.data?.message ?? "Failed to save user.",
+        );
       }
     } finally {
       setSaving(false);
@@ -462,6 +472,8 @@ function UserDetail({ user, onClose, onEdit }) {
 }
 
 export default function Users() {
+  const { confirm } = useAlert();
+  const toast = useToast();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -529,7 +541,14 @@ export default function Users() {
   };
 
   const handleDelete = async (u) => {
-    if (!window.confirm(`Delete "${u.name}"? This can't be undone.`)) return;
+    const confirmed = await confirm({
+      type: "error",
+      title: "Delete user",
+      message: `Delete "${u.name}"? This can't be undone.`,
+      confirmText: "Delete",
+      cancelText: "Cancel",
+    });
+    if (!confirmed) return;
     setDeletingId(u.user_id);
     try {
       await usersApi.remove(u.user_id);
@@ -539,8 +558,12 @@ export default function Users() {
       } else {
         load(page);
       }
+      toast.success("User deleted", `"${u.name}" was deleted successfully.`);
     } catch (err) {
-      alert(err?.response?.data?.message ?? "Couldn't delete this user.");
+      toast.error(
+        "Delete failed",
+        err?.response?.data?.message ?? "Couldn't delete this user.",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -663,8 +686,8 @@ export default function Users() {
       )}
 
       {/* Table */}
-      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <table className="w-full font-body text-[13.5px]">
+      <div className="mx-6 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
+        <table className="w-full min-w-[640px] font-body text-[13.5px]">
           <thead>
             <tr className="text-left text-[#9CA3AF] text-[11px] uppercase font-mono tracking-wide border-b border-[#F0F1F3]">
               <th className="px-5 py-3 font-medium">Name</th>

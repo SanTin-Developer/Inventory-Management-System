@@ -100,7 +100,7 @@ function ToastViewport({ toasts, onDismiss }) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-3 w-full max-w-sm pointer-events-none">
+    <div className="fixed top-4 inset-x-4 z-[100] flex flex-col gap-3 sm:left-auto sm:right-4 sm:w-full sm:max-w-sm pointer-events-none">
       {toasts.map((t) => (
         <Toast key={t.id} toast={t} onDismiss={() => onDismiss(t.id)} />
       ))}

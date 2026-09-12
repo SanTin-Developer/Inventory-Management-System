@@ -249,7 +249,7 @@ export default function Commissions() {
       </div>
 
       {/* Leaderboard table */}
-      <div className="mx-6 mb-8 bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
+      <div className="mx-6 mb-8 bg-white rounded-xl border border-[#E5E7EB] overflow-x-auto">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0F1F3]">
           <h2 className="font-display font-semibold text-[15px] text-[#10151F]">
             Seller breakdown
@@ -266,7 +266,7 @@ export default function Commissions() {
             ))}
           </div>
         ) : filteredRows.length ? (
-          <table className="w-full font-body text-[13px]">
+          <table className="w-full min-w-[640px] font-body text-[13px]">
             <thead>
               <tr className="text-left text-[#9CA3AF] text-[11.5px] uppercase font-mono tracking-wide">
                 <th className="px-5 py-2.5 font-medium">Rank</th>
