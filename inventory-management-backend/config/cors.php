@@ -20,6 +20,7 @@ return [
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     'allowed_origins' => [
+        env('FRONTEND_URL') ?? 'http://localhost:5173',
         'http://localhost:5173',
         'http://inventory-management.test',
     ],
