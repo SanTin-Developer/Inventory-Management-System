@@ -38,7 +38,7 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`${width} shrink-0 bg-white border-r border-[#E5E7EB] h-screen sticky top-0 flex flex-col transition-[width] duration-200
+        className={`${width} shrink-0 bg-white border-r border-[#E5E7EB] h-screen flex flex-col transition-[width] duration-200
         fixed lg:static z-40 ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
       >
         <style>{`
